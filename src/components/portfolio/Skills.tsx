@@ -194,14 +194,14 @@ const Skills = ({
                         <div key={key}>
                           <div className="text-sm text-muted-foreground mb-2 capitalize">{key}:</div>
                           <div className="flex flex-wrap gap-2">
-                            {items.map((item: string) => (
+                            {Array.isArray(items) ? items.map((item: string) => (
                               <span
                                 key={item}
                                 className="inline-block px-3 py-1.5 text-sm border-2 border-primary rounded-full bg-transparent hover:bg-primary hover:text-primary-foreground transition-all whitespace-nowrap"
                               >
                                 {item}
                               </span>
-                            ))}
+                            )) : null}
                           </div>
                         </div>
                       ))}
