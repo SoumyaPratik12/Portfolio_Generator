@@ -15,32 +15,24 @@ const Dashboard = () => {
       try {
         const localPortfolio = localStorage.getItem('current_portfolio');
         console.log('Loading portfolio from localStorage:', localPortfolio);
-        if (localPortfolio) {
+        if (localPortfolio && localPortfolio !== 'null') {
           const data = JSON.parse(localPortfolio);
           console.log('Parsed portfolio data:', data);
           setPortfolio(data);
-          toast.success('Portfolio data loaded successfully!');
         } else {
           console.log('No portfolio found in localStorage');
           setPortfolio(null);
         }
       } catch (error) {
         console.error('Error loading portfolio:', error);
-        toast.error('Failed to load portfolio data');
         setPortfolio(null);
       } finally {
         setLoading(false);
       }
     };
 
+    // Load immediately
     loadPortfolio();
-    
-    // Also listen for storage events from other tabs/windows
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'current_portfolio') {
-        loadPortfolio();
-      }
-    };
     
     // Listen for custom portfolio update events
     const handlePortfolioUpdate = (e: CustomEvent) => {
@@ -49,29 +41,48 @@ const Dashboard = () => {
       setLoading(false);
     };
     
-    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('portfolioUpdated', handlePortfolioUpdate as EventListener);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('portfolioUpdated', handlePortfolioUpdate as EventListener);
     };
   }, []);
 
-  // Reload data when component becomes visible
+  // Reload data when component becomes visible or when navigating back
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         const localPortfolio = localStorage.getItem('current_portfolio');
-        if (localPortfolio) {
+        if (localPortfolio && localPortfolio !== 'null') {
+          try {
+            const data = JSON.parse(localPortfolio);
+            setPortfolio(data);
+          } catch (error) {
+            console.error('Error parsing portfolio data:', error);
+          }
+        }
+      }
+    };
+
+    const handleFocus = () => {
+      const localPortfolio = localStorage.getItem('current_portfolio');
+      if (localPortfolio && localPortfolio !== 'null') {
+        try {
           const data = JSON.parse(localPortfolio);
           setPortfolio(data);
+        } catch (error) {
+          console.error('Error parsing portfolio data:', error);
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const handleDeletePortfolio = () => {

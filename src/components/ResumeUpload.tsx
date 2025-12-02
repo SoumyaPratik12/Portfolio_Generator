@@ -191,13 +191,22 @@ export default function ResumeUpload() {
       try {
         localStorage.setItem('current_portfolio', JSON.stringify(portfolioData));
         console.log('Portfolio data saved to localStorage:', portfolioData);
-        setPortfolioData(portfolioData);
-        setUploadComplete(true);
         
-        // Dispatch custom event to notify other components
-        window.dispatchEvent(new CustomEvent('portfolioUpdated', { detail: portfolioData }));
-        
-        toast.success("Portfolio generated successfully! You can now preview or edit it.");
+        // Verify data was saved correctly
+        const savedData = localStorage.getItem('current_portfolio');
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          console.log('Verified saved data:', parsedData);
+          setPortfolioData(portfolioData);
+          setUploadComplete(true);
+          
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new CustomEvent('portfolioUpdated', { detail: portfolioData }));
+          
+          toast.success("Portfolio generated successfully! You can now preview or edit it.");
+        } else {
+          throw new Error('Data was not saved properly');
+        }
       } catch (error) {
         console.error('Failed to save portfolio data:', error);
         toast.error('Failed to save portfolio data. Please try again.');
@@ -308,9 +317,18 @@ export default function ResumeUpload() {
               <Button 
                 onClick={() => {
                   // Ensure data is saved before navigation
-                  localStorage.setItem('current_portfolio', JSON.stringify(portfolioData));
-                  // Force dashboard to reload data
-                  navigate("/dashboard", { replace: true });
+                  try {
+                    localStorage.setItem('current_portfolio', JSON.stringify(portfolioData));
+                    console.log('Data saved before dashboard navigation:', portfolioData);
+                    
+                    // Small delay to ensure localStorage is updated
+                    setTimeout(() => {
+                      navigate("/dashboard");
+                    }, 100);
+                  } catch (error) {
+                    console.error('Error saving data before navigation:', error);
+                    toast.error('Failed to save data. Please try again.');
+                  }
                 }} 
                 variant="outline"
                 className="flex items-center justify-center gap-2"
