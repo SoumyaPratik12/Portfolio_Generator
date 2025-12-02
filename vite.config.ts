@@ -1,38 +1,56 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { fileURLToPath, URL } from "node:url";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [react(), componentTagger()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+// Vite 5 compatible config
+export default defineConfig(({ mode }) => {
+  const isProd = mode === "production";
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
     },
-  },
-  define: {
-    __APP_URL__: JSON.stringify(mode === 'production' ? 'https://portfoliogenerator.com' : 'http://localhost:8080'),
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: 'terser',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
+
+    plugins: [
+      react(),
+      // Lovable Tagger plugin (requires Vite 5+)
+      componentTagger()
+    ],
+
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+      },
+    },
+
+    define: {
+      __APP_URL__: JSON.stringify(
+        isProd
+          ? "https://portfoliogenerator.com"
+          : "http://localhost:8080"
+      ),
+    },
+
+    build: {
+      outDir: "dist",
+      sourcemap: false,
+      minify: "terser",
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["react", "react-dom"],
+            router: ["react-router-dom"],
+          },
         },
       },
     },
-  },
-  preview: {
-    port: 4173,
-    host: true,
-  },
-}));
+
+    preview: {
+      port: 4173,
+      host: true,
+    },
+  };
+});
