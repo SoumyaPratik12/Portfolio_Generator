@@ -110,8 +110,11 @@ const Dashboard = () => {
       localStorage.setItem('current_portfolio', JSON.stringify(updatedPortfolio));
       setPortfolio(updatedPortfolio);
       
-      const liveUrl = `https://${portfolio.subdomain}.portfoliogen.app`;
-      toast.success(`Portfolio deployed successfully! Live at: ${liveUrl}`);
+      // Use the current Vercel deployment URL
+      const currentUrl = window.location.origin;
+      const liveUrl = `${currentUrl}/portfolio/${portfolio.subdomain}`;
+      
+      toast.success(`Portfolio deployed successfully!`);
       
       setTimeout(() => {
         window.open(liveUrl, '_blank');
@@ -182,7 +185,7 @@ const Dashboard = () => {
                   </span>
                 </CardTitle>
                 <CardDescription>
-                  {portfolio?.subdomain || 'portfolio'}.portfoliogen.app
+                  {window.location.origin}/portfolio/{portfolio?.subdomain || 'portfolio'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -233,7 +236,7 @@ const Dashboard = () => {
 
                   {portfolio.status === 'published' ? (
                     <Button
-                      onClick={() => window.open(`https://${portfolio.subdomain}.portfoliogen.app`, '_blank')}
+                      onClick={() => window.open(`${window.location.origin}/portfolio/${portfolio.subdomain}`, '_blank')}
                       variant="outline"
                       className="flex items-center gap-2"
                     >
