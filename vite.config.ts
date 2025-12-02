@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { fileURLToPath, URL } from "node:url";
+import { resolve } from "path";
 import { componentTagger } from "lovable-tagger";
 
 // Vite 5 compatible config
@@ -22,7 +21,7 @@ export default defineConfig(({ mode }) => {
 
     resolve: {
       alias: {
-        "@": fileURLToPath(new URL("./src", import.meta.url)),
+        "@": resolve("src"),
       },
     },
 
