@@ -95,7 +95,6 @@ export default function ResumeUpload() {
         tagline: `${parsedResume.title} with expertise in modern technologies`,
         bio: parsedResume.summary,
         email: parsedResume.email,
-        phone: parsedResume.phone,
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
         resumeUrl: "#",
@@ -108,10 +107,8 @@ export default function ResumeUpload() {
         skills: parsedResume.skills,
         experience: parsedResume.experience,
         projects: parsedResume.projects,
-        education: parsedResume.education,
         contact: {
           email: parsedResume.email,
-          phone: parsedResume.phone,
           linkedin: "https://linkedin.com/in/yourusername",
           github: "https://github.com/yourusername",
           location: "Your City, State"

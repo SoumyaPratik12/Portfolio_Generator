@@ -3,7 +3,6 @@ export interface ParsedResume {
   name: string;
   title: string;
   email: string;
-  phone: string;
   summary: string;
   skills: Array<{ name: string; category: string }>;
   experience: Array<{
@@ -19,11 +18,6 @@ export interface ParsedResume {
     description: string;
     technologies: string[];
     link?: string;
-  }>;
-  education: Array<{
-    degree: string;
-    school: string;
-    year: string;
   }>;
 }
 
@@ -44,23 +38,19 @@ export async function parseResume(file: File): Promise<ParsedResume> {
     // Extract name - try multiple methods
     const extractedName = extractName(text, file.name);
     const extractedEmail = extractEmail(text);
-    const extractedPhone = extractPhone(text);
     const extractedSkills = extractSkills(text);
     const extractedExperience = extractExperience(text);
     const extractedProjects = extractProjects(text);
-    const extractedEducation = extractEducation(text);
     const extractedSummary = extractSummary(text);
 
     const parsed = {
       name: extractedName,
       title: extractTitle(text),
       email: extractedEmail,
-      phone: extractedPhone,
       summary: extractedSummary,
       skills: extractedSkills,
       experience: extractedExperience,
-      projects: extractedProjects,
-      education: extractedEducation
+      projects: extractedProjects
     };
 
     console.log('Parsed resume data:', parsed);
@@ -104,18 +94,7 @@ function extractEmail(text: string): string {
   return emailMatch?.[0] || 'your.email@example.com';
 }
 
-function extractPhone(text: string): string {
-  const phonePatterns = [
-    /\+?1?[\s-]?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}/,
-    /\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/
-  ];
 
-  for (const pattern of phonePatterns) {
-    const match = text.match(pattern);
-    if (match) return match[0];
-  }
-  return '+1 (555) 000-0000';
-}
 
 function extractSkills(text: string): ParsedResume['skills'] {
   const skillKeywords = [
@@ -277,49 +256,7 @@ function extractProjects(text: string): ParsedResume['projects'] {
   return projects;
 }
 
-function extractEducation(text: string): ParsedResume['education'] {
-  const education: ParsedResume['education'] = [];
-  
-  // Look for education section
-  const educationSection = text.match(/(?:education|academic)[\s\S]*?(?=\n\n|experience|skills|projects|$)/i);
-  const eduText = educationSection ? educationSection[0] : text;
-  
-  // Extract degrees and schools
-  const degreePatterns = [
-    /(Bachelor|Master|PhD|B\.?S\.?|M\.?S\.?|B\.?A\.?|M\.?A\.?)\s*(?:of|in)?\s*([\w\s]+)\s*[\n\r]?\s*([A-Z][\w\s&.,]+)\s*[\n\r]?\s*(\d{4})/gi,
-    /([A-Z][\w\s]+(?:University|College|Institute))\s*[\n\r]?\s*(\d{4})/gi
-  ];
-  
-  for (const pattern of degreePatterns) {
-    let match;
-    while ((match = pattern.exec(eduText)) !== null) {
-      if (pattern === degreePatterns[0]) {
-        education.push({
-          degree: `${match[1]} ${match[2]}`.trim(),
-          school: match[3].trim(),
-          year: match[4]
-        });
-      } else {
-        education.push({
-          degree: 'Degree',
-          school: match[1].trim(),
-          year: match[2]
-        });
-      }
-    }
-  }
-  
-  // Fallback if no education found
-  if (education.length === 0) {
-    education.push({
-      degree: 'Bachelor of Science in Computer Science',
-      school: 'University',
-      year: '2020'
-    });
-  }
-  
-  return education;
-}
+
 
 function getDefaultSkills(): ParsedResume['skills'] {
   return [
