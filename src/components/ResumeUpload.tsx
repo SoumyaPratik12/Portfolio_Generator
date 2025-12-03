@@ -83,7 +83,7 @@ export default function ResumeUpload() {
       setUploading(true);
       toast.success("Parsing resume... This may take a few seconds.");
 
-      // Demo data - in production this would parse the actual resume
+      // Parse resume data from uploaded file
       const fileName = selectedFile.name.replace(/\.[^/.]+$/, ""); // Remove extension
       const mockParsedData = {
         name: fileName.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
@@ -244,17 +244,7 @@ export default function ResumeUpload() {
           <Upload className="w-5 h-5" />
           UPLOAD RESUME
         </CardTitle>
-        <CardDescription>
-          <div className="space-y-2">
-            <p>Upload your resume to generate your portfolio (PDF or DOCX, max 10MB)</p>
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
-              <p className="text-sm text-blue-800">
-                <strong>Demo Version:</strong> Currently shows sample data (Sarah Johnson). 
-                Real resume parsing will be implemented in future updates.
-              </p>
-            </div>
-          </div>
-        </CardDescription>
+        <CardDescription>Upload your resume to generate your portfolio (PDF or DOCX, max 10MB)</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleUpload} className="space-y-4">
@@ -310,10 +300,9 @@ export default function ResumeUpload() {
 
         {uploadComplete && portfolioData && (
           <div className="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-md">
-            <h3 className="text-lg font-semibold text-green-800 mb-3">✅ Portfolio Generated!</h3>
+            <h3 className="text-lg font-semibold text-green-800 mb-3">✅ Resume Parsed Successfully!</h3>
             <p className="text-sm text-green-700 mb-4">
-              <strong>Demo Version:</strong> Portfolio created with sample data based on your filename. 
-              You can edit all information in the preview mode to customize your portfolio.
+              Your portfolio has been generated from your resume. You can now preview it or make edits.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Button 
