@@ -20,9 +20,9 @@ interface HeroProps {
 
 const Hero = ({
   name = "",
-  title = "Your Title",
-  tagline = "Building Innovative Solutions with Modern Technologies",
-  bio = "Your bio here",
+  title = "",
+  tagline = "",
+  bio = "",
   email,
   github,
   linkedin,
@@ -165,23 +165,17 @@ const Hero = ({
             </div>
           ) : (
             <>
-              <div className="inline-block mb-6 px-6 py-2 border-2 border-primary bg-secondary">
-                <span className="font-mono text-sm">{title.toUpperCase()}</span>
-              </div>
+              {title && (
+                <div className="inline-block mb-6 px-6 py-2 border-2 border-primary bg-secondary">
+                  <span className="font-mono text-sm">{title.toUpperCase()}</span>
+                </div>
+              )}
 
               {name && (
-                <h1 className="text-6xl md:text-8xl font-bold mb-6">
+                <h1 className="text-6xl md:text-8xl font-bold mb-12">
                   {name}
                 </h1>
               )}
-
-              {tagline && (
-                <p className="text-xl md:text-2xl mb-8 text-muted-foreground font-mono">
-                  {tagline}
-                </p>
-              )}
-
-
 
               <div className="flex flex-wrap gap-4 justify-center mb-8">
                 {email && (
