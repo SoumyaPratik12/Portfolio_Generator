@@ -2,29 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { resolve } from "path";
 
-async function loadOptional(name: string) {
-  try {
-    const mod = await import(name);
-    return mod?.componentTagger ?? mod?.default ?? mod;
-  } catch (err) {
-    // plugin not available — continue without it
-    return null;
-  }
-}
-
-export default async ({ mode }: { mode: string }) => {
+export default defineConfig(({ mode }) => {
   const isProd = mode === "production";
-  const componentTagger = await loadOptional("lovable-tagger");
 
-  return defineConfig({
+  return {
     server: {
       host: "::",
       port: 8080,
     },
-    plugins: [
-      react(),
-      ...(componentTagger ? [componentTagger()] : []),
-    ],
+    plugins: [react()],
     resolve: {
       alias: { "@": resolve("src") },
     },
@@ -47,5 +33,5 @@ export default async ({ mode }: { mode: string }) => {
       port: 4173,
       host: true,
     },
-  });
-};
+  };
+});
