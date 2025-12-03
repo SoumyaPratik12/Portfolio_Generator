@@ -88,8 +88,10 @@ export default function ResumeUpload() {
       const parsedResume = await parseResume(selectedFile);
       console.log('Received parsed resume:', parsedResume);
       
-      if (!parsedResume) {
-        throw new Error('Resume parsing returned null or undefined');
+      // Ensure we have valid parsed data
+      if (!parsedResume || typeof parsedResume !== 'object') {
+        console.warn('Invalid parsed resume data, using defaults');
+        throw new Error('Resume parsing returned invalid data');
       }
       
       const parsedData = {
