@@ -8,21 +8,17 @@ import { Mail, Github, Linkedin, ExternalLink, Save, X } from "lucide-react";
 interface HeroProps {
   name?: string;
   title?: string;
-  tagline?: string;
-  bio?: string;
   email?: string;
   github?: string;
   linkedin?: string;
   resumeUrl?: string;
   isEditing?: boolean;
-  onUpdate?: (data: { name?: string; title?: string; tagline?: string; bio?: string; email?: string; github?: string; linkedin?: string; resumeUrl?: string; }) => void;
+  onUpdate?: (data: { name?: string; title?: string; email?: string; github?: string; linkedin?: string; resumeUrl?: string; }) => void;
 }
 
 const Hero = ({
   name = "",
   title = "",
-  tagline = "",
-  bio = "",
   email,
   github,
   linkedin,
@@ -33,8 +29,6 @@ const Hero = ({
   const [editData, setEditData] = useState({
     name,
     title,
-    tagline,
-    bio,
     email,
     github,
     linkedin,
@@ -56,8 +50,6 @@ const Hero = ({
       setEditData({
         name,
         title,
-        tagline,
-        bio,
         email,
         github,
         linkedin,
@@ -102,27 +94,6 @@ const Hero = ({
                     value={editData.title}
                     onChange={(e) => setEditData({...editData, title: e.target.value})}
                     className="text-center"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="tagline">Tagline</Label>
-                  <Input
-                    id="tagline"
-                    value={editData.tagline}
-                    onChange={(e) => setEditData({...editData, tagline: e.target.value})}
-                    className="text-center"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={editData.bio}
-                    onChange={(e) => setEditData({...editData, bio: e.target.value})}
-                    className="text-center"
-                    rows={3}
                   />
                 </div>
 
