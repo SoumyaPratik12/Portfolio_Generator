@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Globe, Eye } from "lucide-react";
+import { ArrowLeft, Edit, Globe, Eye, Upload } from "lucide-react";
 import { toast } from "sonner";
 import Hero from "@/components/portfolio/Hero";
 import About from "@/components/portfolio/About";
@@ -29,61 +29,8 @@ const Preview = () => {
           console.log('Loaded portfolio data:', data);
           setPortfolio(data);
         } else {
-          // Create default portfolio data for testing
-          const defaultPortfolio = {
-            id: 'default-portfolio',
-            subdomain: 'default-portfolio',
-            status: 'draft',
-            visibility: 'private',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            portfolio_data: {
-              name: "John Doe",
-              title: "Software Engineer",
-              tagline: "Building amazing web applications",
-              bio: "Passionate developer with experience in modern web technologies.",
-              email: "john.doe@email.com",
-              phone: "+1 (555) 123-4567",
-              github: "https://github.com/johndoe",
-              linkedin: "https://linkedin.com/in/johndoe",
-              about: "I'm a software engineer with 5+ years of experience building web applications.",
-              stats: { yearsExperience: 5, projectsCompleted: 10, usersImpacted: "100K+" },
-              skills: [
-                { name: "JavaScript", category: "Frontend" },
-                { name: "React", category: "Frontend" },
-                { name: "Node.js", category: "Backend" },
-                { name: "Python", category: "Backend" }
-              ],
-              experience: [
-                {
-                  title: "Software Engineer",
-                  company: "Tech Company",
-                  duration: "2020 - Present",
-                  location: "San Francisco, CA",
-                  description: "Developing web applications using React and Node.js.",
-                  achievements: ["Built 5 major features", "Improved performance by 30%"]
-                }
-              ],
-              projects: [
-                {
-                  title: "Web Application",
-                  description: "A modern web application built with React and Node.js.",
-                  technologies: ["React", "Node.js", "MongoDB"],
-                  link: "https://github.com/johndoe/project",
-                  metrics: "Used by 1000+ users"
-                }
-              ],
-              contact: {
-                email: "john.doe@email.com",
-                phone: "+1 (555) 123-4567",
-                linkedin: "https://linkedin.com/in/johndoe",
-                github: "https://github.com/johndoe",
-                location: "San Francisco, CA"
-              }
-            }
-          };
-          setPortfolio(defaultPortfolio);
-          console.log('No portfolio data found in localStorage. Using default data for preview.');
+          console.log('No portfolio data found in localStorage.');
+          setPortfolio(null);
         }
       } catch (error) {
         console.error('Error loading portfolio:', error);
@@ -109,7 +56,18 @@ const Preview = () => {
   }
 
   if (!portfolio) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <h1 className="text-2xl font-bold mb-4">No Portfolio Found</h1>
+          <p className="text-muted-foreground mb-6">Please upload a resume first to generate your portfolio.</p>
+          <Button onClick={() => navigate("/")} className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload Resume
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const generateSubdomain = (name: string) => {
