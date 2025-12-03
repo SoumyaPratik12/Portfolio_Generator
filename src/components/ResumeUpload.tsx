@@ -83,16 +83,17 @@ export default function ResumeUpload() {
       setUploading(true);
       toast.success("Parsing resume... This may take a few seconds.");
 
-      // Simulate resume parsing with realistic data
+      // Demo data - in production this would parse the actual resume
+      const fileName = selectedFile.name.replace(/\.[^/.]+$/, ""); // Remove extension
       const mockParsedData = {
-        name: "Sarah Johnson",
-        title: "Senior Software Engineer",
-        tagline: "Building scalable web applications with modern technologies",
-        bio: "Passionate software engineer with 6+ years of experience in full-stack development, specializing in React, Node.js, and cloud technologies.",
-        email: "sarah.johnson@email.com",
-        phone: "+1 (555) 123-4567",
-        github: "https://github.com/sarahjohnson",
-        linkedin: "https://linkedin.com/in/sarahjohnson",
+        name: fileName.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+        title: "Software Engineer",
+        tagline: "Building innovative solutions with modern technologies",
+        bio: `Passionate professional with experience in software development and technology solutions.`,
+        email: "your.email@example.com",
+        phone: "+1 (555) 000-0000",
+        github: "https://github.com/yourusername",
+        linkedin: "https://linkedin.com/in/yourusername",
         resumeUrl: "#",
         about: "I'm a results-driven software engineer with a passion for creating efficient, scalable solutions. With over 6 years of experience in the tech industry, I've successfully delivered 15+ production applications serving millions of users. I specialize in modern web technologies and have a proven track record of improving system performance by up to 40%.",
         stats: {
@@ -243,7 +244,17 @@ export default function ResumeUpload() {
           <Upload className="w-5 h-5" />
           UPLOAD RESUME
         </CardTitle>
-        <CardDescription>Upload your resume to generate your portfolio (PDF or DOCX, max 10MB)</CardDescription>
+        <CardDescription>
+          <div className="space-y-2">
+            <p>Upload your resume to generate your portfolio (PDF or DOCX, max 10MB)</p>
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Demo Version:</strong> Currently shows sample data (Sarah Johnson). 
+                Real resume parsing will be implemented in future updates.
+              </p>
+            </div>
+          </div>
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleUpload} className="space-y-4">
@@ -299,9 +310,10 @@ export default function ResumeUpload() {
 
         {uploadComplete && portfolioData && (
           <div className="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-md">
-            <h3 className="text-lg font-semibold text-green-800 mb-3">✅ Resume Parsed Successfully!</h3>
+            <h3 className="text-lg font-semibold text-green-800 mb-3">✅ Portfolio Generated!</h3>
             <p className="text-sm text-green-700 mb-4">
-              Your portfolio has been generated from your resume. You can now preview it or make edits.
+              <strong>Demo Version:</strong> Portfolio created with sample data based on your filename. 
+              You can edit all information in the preview mode to customize your portfolio.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Button 
