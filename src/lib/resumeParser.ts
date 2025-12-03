@@ -70,23 +70,42 @@ async function tryReadFileAsText(file: File): Promise<string> {
 }
 
 function extractName(text: string, fileName: string): string {
-  // Try to find name in text first
+  // Enhanced name extraction patterns
   const namePatterns = [
-    /^([A-Z][a-z]+ [A-Z][a-z]+)/m,
-    /Name[:\s]+([A-Z][a-z]+ [A-Z][a-z]+)/i,
-    /([A-Z][A-Z\s]+)\n/
+    // Name at the beginning of resume
+    /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/m,
+    // Name with label
+    /(?:Name|Full Name)[:\s]+([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    // Name in all caps at start
+    /^\s*([A-Z]{2,}\s+[A-Z]{2,}(?:\s+[A-Z]{2,})?)/m,
+    // Name followed by contact info
+    /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+)\s*[\n\r].*(?:@|\+|\d{3})/m,
+    // Name in header section
+    /^([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)(?:\s*\n|\s*$)/m
   ];
 
+  // Clean the text for better matching
+  const cleanText = text.replace(/[^\w\s@.\n\r-]/g, ' ').replace(/\s+/g, ' ');
+  
   for (const pattern of namePatterns) {
-    const match = text.match(pattern);
-    if (match && match[1] && match[1].length > 3) {
-      return match[1].trim();
+    const match = cleanText.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      // Validate it looks like a real name (2-3 words, proper case)
+      if (name.length > 3 && name.length < 50 && /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(name)) {
+        return name;
+      }
     }
   }
 
-  // Fallback to filename
-  const fileName2 = fileName.replace(/\.[^/.]+$/, "");
-  return fileName2.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase()) || 'Your Name';
+  // Last resort: use filename but only if it looks like a name
+  const fileName2 = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+  const fileBasedName = fileName2.replace(/\b\w/g, l => l.toUpperCase());
+  if (/^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(fileBasedName)) {
+    return fileBasedName;
+  }
+  
+  return 'Candidate Name';
 }
 
 function extractEmail(text: string): string {
@@ -149,120 +168,248 @@ function extractTitle(text: string): string {
 }
 
 function extractSummary(text: string): string {
-  // Look for summary/objective sections
+  // Enhanced summary extraction patterns
   const summaryPatterns = [
-    /(?:summary|objective|about|profile)[:\s]+([\s\S]*?)(?:\n\n|\nexperience|\neducation|\nskills)/i,
-    /(?:summary|objective|about|profile)[:\s]+([^\n]*)/i
+    // Labeled sections
+    /(?:summary|objective|about|profile|overview)[:\s]+([\s\S]*?)(?:\n\s*(?:experience|education|skills|projects)|$)/i,
+    // Professional summary
+    /(?:professional\s+summary|career\s+summary)[:\s]+([\s\S]*?)(?:\n\s*(?:experience|education|skills)|$)/i,
+    // First paragraph after name/contact
+    /(?:@[\w.]+|\+?\d[\d\s\-()]+)[\s\n]+([A-Z][^\n]*(?:\n[^\n]*){0,3})(?:\n\s*(?:experience|skills|education)|$)/i
   ];
   
   for (const pattern of summaryPatterns) {
     const match = text.match(pattern);
-    if (match && match[1] && match[1].trim().length > 20) {
-      return match[1].trim().substring(0, 300);
+    if (match && match[1]) {
+      const summary = match[1].trim().replace(/\s+/g, ' ');
+      if (summary.length > 30 && summary.length < 500) {
+        return summary;
+      }
     }
   }
   
-  // Extract first meaningful paragraph
-  const paragraphs = text.split('\n').filter(p => p.trim().length > 50);
-  if (paragraphs.length > 0) {
-    return paragraphs[0].trim().substring(0, 300);
+  // Look for descriptive paragraphs near the top
+  const lines = text.split('\n');
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
+    const line = lines[i].trim();
+    if (line.length > 50 && line.length < 300 && 
+        /^[A-Z]/.test(line) && 
+        !/@/.test(line) && 
+        !/\d{4}/.test(line)) {
+      return line;
+    }
   }
   
-  return 'Passionate professional with experience in software development and technology solutions.';
+  return '';
 }
 
 function extractExperience(text: string): ParsedResume['experience'] {
   const experiences: ParsedResume['experience'] = [];
   
-  // Look for experience sections
-  const experienceSection = text.match(/(?:experience|work history|employment)[\s\S]*?(?=\n\n|education|skills|projects|$)/i);
-  const workText = experienceSection ? experienceSection[0] : text;
+  // Look for experience sections with better patterns
+  const experiencePatterns = [
+    /(?:experience|work\s+history|employment|professional\s+experience)[\s\S]*?(?=\n\s*(?:education|skills|projects|certifications)|$)/i,
+    /(?:work|employment)[\s\S]*?(?=\n\s*(?:education|skills|projects)|$)/i
+  ];
   
-  // Extract job titles and companies
+  let workText = '';
+  for (const pattern of experiencePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      workText = match[0];
+      break;
+    }
+  }
+  
+  if (!workText) workText = text;
+  
+  // Enhanced job extraction patterns
   const jobPatterns = [
-    /([A-Z][\w\s]+(?:Engineer|Developer|Manager|Analyst|Specialist|Consultant))\s*[\n\r]?\s*(?:at\s+)?([A-Z][\w\s&.,]+)\s*[\n\r]?\s*(\d{4}\s*[-–]\s*(?:\d{4}|Present))/gi,
-    /([A-Z][\w\s]+)\s*\|\s*([A-Z][\w\s&.,]+)\s*\|\s*(\d{4}\s*[-–]\s*(?:\d{4}|Present))/gi
+    // Title, Company, Duration format
+    /([A-Z][\w\s]+(?:Engineer|Developer|Manager|Analyst|Specialist|Consultant|Designer|Architect|Lead|Director|Coordinator))\s*[\n\r]+\s*([A-Z][\w\s&.,Inc]+)\s*[\n\r]+\s*((?:\d{1,2}\/)?\d{4}\s*[-–—]\s*(?:(?:\d{1,2}\/)?\d{4}|Present|Current))/gi,
+    // Company | Title | Duration
+    /([A-Z][\w\s&.,Inc]+)\s*[|\-]\s*([A-Z][\w\s]+(?:Engineer|Developer|Manager|Analyst))\s*[|\-]\s*(\d{4}\s*[-–]\s*(?:\d{4}|Present))/gi,
+    // Title at Company (Duration)
+    /([A-Z][\w\s]+(?:Engineer|Developer|Manager))\s+at\s+([A-Z][\w\s&.,]+)\s*\((\d{4}\s*[-–]\s*(?:\d{4}|Present))\)/gi
   ];
   
   for (const pattern of jobPatterns) {
     let match;
-    while ((match = pattern.exec(workText)) !== null) {
+    while ((match = pattern.exec(workText)) !== null && experiences.length < 5) {
+      let title, company, duration;
+      
+      if (pattern === jobPatterns[1]) {
+        // Company | Title | Duration format
+        company = match[1].trim();
+        title = match[2].trim();
+        duration = match[3].trim();
+      } else {
+        // Title, Company, Duration format
+        title = match[1].trim();
+        company = match[2].trim();
+        duration = match[3].trim();
+      }
+      
+      // Extract description from surrounding text
+      const description = extractJobDescription(workText, title, company);
+      
       experiences.push({
-        title: match[1].trim(),
-        company: match[2].trim(),
-        duration: match[3].trim(),
-        location: 'Location not specified',
-        description: `${match[1]} role at ${match[2]}`,
-        achievements: ['Contributed to team success', 'Delivered quality results']
+        title,
+        company,
+        duration,
+        location: extractLocation(workText, company) || 'Remote',
+        description: description || `${title} position at ${company}`,
+        achievements: extractAchievements(workText, title, company)
       });
     }
-  }
-  
-  // Fallback if no experience found
-  if (experiences.length === 0) {
-    const title = extractTitle(text);
-    experiences.push({
-      title: title,
-      company: 'Previous Company',
-      duration: '2020 - Present',
-      location: 'Location',
-      description: `${title} with experience in software development.`,
-      achievements: ['Developed software solutions', 'Collaborated with team members']
-    });
   }
   
   return experiences;
 }
 
+function extractJobDescription(text: string, title: string, company: string): string {
+  // Look for bullet points or descriptions near the job
+  const jobSection = new RegExp(`${title}[\s\S]*?${company}[\s\S]*?(?=\n\s*[A-Z][\w\s]+(?:Engineer|Developer|Manager)|$)`, 'i');
+  const match = text.match(jobSection);
+  
+  if (match) {
+    const bullets = match[0].match(/[•\-\*]\s*([^\n]+)/g);
+    if (bullets && bullets.length > 0) {
+      return bullets[0].replace(/[•\-\*]\s*/, '').trim();
+    }
+  }
+  
+  return '';
+}
+
+function extractLocation(text: string, company: string): string | null {
+  const locationPattern = new RegExp(`${company}[\s\S]*?([A-Z][a-z]+,\s*[A-Z]{2})`, 'i');
+  const match = text.match(locationPattern);
+  return match ? match[1] : null;
+}
+
+function extractAchievements(text: string, title: string, company: string): string[] {
+  const achievements: string[] = [];
+  const jobSection = new RegExp(`${title}[\s\S]*?${company}[\s\S]*?(?=\n\s*[A-Z][\w\s]+(?:Engineer|Developer|Manager)|$)`, 'i');
+  const match = text.match(jobSection);
+  
+  if (match) {
+    const bullets = match[0].match(/[•\-\*]\s*([^\n]+)/g);
+    if (bullets) {
+      bullets.forEach(bullet => {
+        const achievement = bullet.replace(/[•\-\*]\s*/, '').trim();
+        if (achievement.length > 10) {
+          achievements.push(achievement);
+        }
+      });
+    }
+  }
+  
+  return achievements.length > 0 ? achievements : [];
+}
+
 function extractProjects(text: string): ParsedResume['projects'] {
   const projects: ParsedResume['projects'] = [];
   
-  // Look for project sections
-  const projectSection = text.match(/(?:projects|portfolio)[\s\S]*?(?=\n\n|experience|education|skills|$)/i);
-  const projectText = projectSection ? projectSection[0] : '';
-  
-  // Extract project names
+  // Look for project sections with better patterns
   const projectPatterns = [
-    /(?:Project|Built|Developed)[:\s]*([A-Z][\w\s]+)/gi,
-    /•\s*([A-Z][\w\s]+):/gi,
-    /-\s*([A-Z][\w\s]+):/gi
+    /(?:projects|portfolio|personal\s+projects)[\s\S]*?(?=\n\s*(?:experience|education|skills|certifications)|$)/i,
+    /(?:github|repositories)[\s\S]*?(?=\n\s*(?:experience|education|skills)|$)/i
   ];
   
+  let projectText = '';
   for (const pattern of projectPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      projectText = match[0];
+      break;
+    }
+  }
+  
+  if (!projectText) {
+    // Look for project mentions throughout the text
+    projectText = text;
+  }
+  
+  // Enhanced project extraction patterns
+  const projectNamePatterns = [
+    // Project: Name - Description
+    /(?:Project|Built|Developed|Created)[:\s]*([A-Z][\w\s]+?)\s*[-–]\s*([^\n]+)/gi,
+    // • Project Name: Description
+    /[•\-\*]\s*([A-Z][\w\s]+?):\s*([^\n]+)/gi,
+    // Project Name (Technologies)
+    /([A-Z][\w\s]+?)\s*\(([^)]+)\)/gi,
+    // GitHub links
+    /github\.com\/[\w-]+\/([\w-]+)/gi
+  ];
+  
+  for (const pattern of projectNamePatterns) {
     let match;
-    while ((match = pattern.exec(projectText)) !== null && projects.length < 3) {
+    while ((match = pattern.exec(projectText)) !== null && projects.length < 5) {
       const title = match[1].trim();
-      if (title.length > 3 && title.length < 50) {
+      const description = match[2] ? match[2].trim() : '';
+      
+      if (title.length > 2 && title.length < 60 && !title.toLowerCase().includes('experience')) {
+        const technologies = extractProjectTechnologies(projectText, title);
+        const link = extractProjectLink(projectText, title);
+        
         projects.push({
-          title: title,
-          description: `${title} - A software project demonstrating technical skills and problem-solving abilities.`,
-          technologies: extractSkills(text).slice(0, 4).map(s => s.name),
-          link: 'https://github.com/username/' + title.toLowerCase().replace(/\s+/g, '-')
+          title,
+          description: description || `${title} project showcasing technical skills`,
+          technologies,
+          link
         });
       }
     }
   }
   
-  // Fallback projects if none found
-  if (projects.length === 0) {
-    projects.push({
-      title: 'Software Project',
-      description: 'A comprehensive software project showcasing technical expertise.',
-      technologies: extractSkills(text).slice(0, 3).map(s => s.name),
-      link: 'https://github.com/username/project'
+  return projects;
+}
+
+function extractProjectTechnologies(text: string, projectTitle: string): string[] {
+  const technologies: string[] = [];
+  
+  // Look for technologies mentioned near the project
+  const projectSection = new RegExp(`${projectTitle}[\s\S]{0,200}`, 'i');
+  const match = text.match(projectSection);
+  
+  if (match) {
+    const techKeywords = [
+      'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue', 'Node.js', 'Express',
+      'Python', 'Django', 'Flask', 'Java', 'Spring', 'C++', 'C#',
+      'HTML', 'CSS', 'SCSS', 'Tailwind', 'Bootstrap',
+      'MongoDB', 'PostgreSQL', 'MySQL', 'Redis',
+      'AWS', 'Docker', 'Git'
+    ];
+    
+    techKeywords.forEach(tech => {
+      if (new RegExp(`\\b${tech}\\b`, 'i').test(match[0])) {
+        technologies.push(tech);
+      }
     });
   }
   
-  return projects;
+  return technologies.length > 0 ? technologies : ['Web Development'];
+}
+
+function extractProjectLink(text: string, projectTitle: string): string {
+  // Look for GitHub or other links near the project
+  const linkPattern = /(https?:\/\/[^\s]+)/g;
+  const projectSection = new RegExp(`${projectTitle}[\s\S]{0,200}`, 'i');
+  const match = text.match(projectSection);
+  
+  if (match) {
+    const linkMatch = match[0].match(linkPattern);
+    if (linkMatch) {
+      return linkMatch[0];
+    }
+  }
+  
+  return `https://github.com/username/${projectTitle.toLowerCase().replace(/\s+/g, '-')}`;
 }
 
 
 
 function getDefaultSkills(): ParsedResume['skills'] {
-  return [
-    { name: 'JavaScript', category: 'Frontend' },
-    { name: 'React', category: 'Frontend' },
-    { name: 'Node.js', category: 'Backend' },
-    { name: 'Python', category: 'Backend' }
-  ];
+  return [];
 }
