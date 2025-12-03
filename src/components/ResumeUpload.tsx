@@ -87,7 +87,10 @@ export default function ResumeUpload() {
 
       // Parse resume data from uploaded file
       toast.success("Parsing resume... Extracting your information.");
+      console.log('About to parse file:', selectedFile.name);
+      
       const parsedResume = await parseResume(selectedFile);
+      console.log('Received parsed resume:', parsedResume);
       
       const parsedData = {
         name: parsedResume.name,
@@ -100,13 +103,25 @@ export default function ResumeUpload() {
         resumeUrl: "#",
         about: parsedResume.summary,
         stats: {
-          yearsExperience: parsedResume.experience.length,
-          projectsCompleted: parsedResume.projects.length,
+          yearsExperience: Math.max(1, parsedResume.experience.length),
+          projectsCompleted: Math.max(1, parsedResume.projects.length),
           usersImpacted: "1K+"
         },
-        skills: parsedResume.skills,
-        experience: parsedResume.experience,
-        projects: parsedResume.projects,
+        skills: parsedResume.skills.length > 0 ? parsedResume.skills : [{ name: 'Professional Skills', category: 'General' }],
+        experience: parsedResume.experience.length > 0 ? parsedResume.experience : [{
+          title: parsedResume.title,
+          company: 'Previous Company',
+          duration: '2020 - Present',
+          location: 'Location',
+          description: `${parsedResume.title} with professional experience.`,
+          achievements: ['Professional accomplishments']
+        }],
+        projects: parsedResume.projects.length > 0 ? parsedResume.projects : [{
+          title: 'Professional Project',
+          description: 'A project showcasing professional skills and expertise.',
+          technologies: ['Technology'],
+          link: 'https://github.com/username/project'
+        }],
         contact: {
           email: parsedResume.email,
           linkedin: "https://linkedin.com/in/yourusername",
@@ -114,6 +129,8 @@ export default function ResumeUpload() {
           location: "Your City, State"
         }
       };
+      
+      console.log('Final portfolio data structure:', parsedData);
 
       // Upload file to Supabase Storage
       const fileExt = selectedFile.name.split('.').pop();
@@ -160,21 +177,24 @@ export default function ResumeUpload() {
 
       // Store portfolio data in localStorage for preview
       try {
+        console.log('Saving portfolio data to localStorage:', portfolioData);
         localStorage.setItem('current_portfolio', JSON.stringify(portfolioData));
-        console.log('Portfolio data saved to localStorage:', portfolioData);
+        console.log('Portfolio data saved successfully');
         
         // Verify data was saved correctly
         const savedData = localStorage.getItem('current_portfolio');
         if (savedData) {
-          const parsedData = JSON.parse(savedData);
-          console.log('Verified saved data:', parsedData);
+          const verifiedData = JSON.parse(savedData);
+          console.log('Verified saved data in localStorage:', verifiedData);
+          console.log('Portfolio name in saved data:', verifiedData.portfolio_data?.name);
+          
           setPortfolioData(portfolioData);
           setUploadComplete(true);
           
           // Dispatch custom event to notify other components
           window.dispatchEvent(new CustomEvent('portfolioUpdated', { detail: portfolioData }));
           
-          toast.success("Portfolio generated successfully! You can now preview or edit it.");
+          toast.success(`Portfolio generated for ${parsedData.name}! You can now preview or edit it.`);
         } else {
           throw new Error('Data was not saved properly');
         }
