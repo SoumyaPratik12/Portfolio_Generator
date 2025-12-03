@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { parseResume } from "@/lib/resumeParser";
-import { supabase } from "@/integrations/supabase/client";
 
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -132,18 +131,8 @@ export default function ResumeUpload() {
       
       console.log('Final portfolio data structure:', parsedData);
 
-      // Upload file to Supabase Storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `resumes/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('resumes')
-        .upload(filePath, selectedFile);
-      
-      if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
+      // File processed locally (no upload needed for demo)
+      const filePath = `local/${selectedFile.name}`;
 
       // Create portfolio data with unique ID
       const portfolioData = {
@@ -157,21 +146,7 @@ export default function ResumeUpload() {
         updated_at: new Date().toISOString()
       };
       
-      // Save to Supabase database
-      const { error: dbError } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: portfolioData.id,
-          parsed_json: parsedData,
-          resume_s3_key: filePath,
-          status: 'parsed',
-          updated_at: new Date().toISOString()
-        });
-      
-      if (dbError) {
-        console.error('Database save error:', dbError);
-        // Continue with localStorage fallback
-      }
+      // Data stored locally in localStorage
 
       toast.success("Resume parsed successfully! Redirecting to preview...");
 
