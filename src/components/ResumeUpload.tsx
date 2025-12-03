@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { parseResume } from "@/lib/resumeParser";
+import { PortfolioDeploymentService } from "@/lib/deploymentService";
 
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -82,10 +83,7 @@ export default function ResumeUpload() {
       fileSchema.parse({ file: selectedFile });
 
       setUploading(true);
-      toast.success("Parsing resume... This may take a few seconds.");
-
-      // Parse resume data from uploaded file
-      toast.success("Parsing resume... Extracting your information.");
+      toast.success("Parsing resume and generating live portfolio...");
       console.log('About to parse file:', selectedFile.name);
       
       const parsedResume = await parseResume(selectedFile);
@@ -94,8 +92,8 @@ export default function ResumeUpload() {
       const parsedData = {
         name: parsedResume.name,
         title: parsedResume.title,
-        tagline: `${parsedResume.title} with expertise in modern technologies`,
-        bio: parsedResume.summary,
+        tagline: "Building Innovative Solutions with Modern Technologies",
+        bio: parsedResume.summary || '',
         email: parsedResume.email,
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
@@ -131,7 +129,7 @@ export default function ResumeUpload() {
       
       console.log('Final portfolio data structure:', parsedData);
 
-      // File processed locally (no upload needed for demo)
+      // File processed locally
       const filePath = `local/${selectedFile.name}`;
 
       // Create portfolio data with unique ID
@@ -146,36 +144,39 @@ export default function ResumeUpload() {
         updated_at: new Date().toISOString()
       };
       
-      // Data stored locally in localStorage
+      toast.success("Resume parsed successfully! Deploying live website...");
 
-      toast.success("Resume parsed successfully! Redirecting to preview...");
-
-      // Store portfolio data in localStorage for preview
+      // Store and automatically deploy portfolio
       try {
-        console.log('Saving portfolio data to localStorage:', portfolioData);
+        console.log('Saving and deploying portfolio data:', portfolioData);
         localStorage.setItem('current_portfolio', JSON.stringify(portfolioData));
-        console.log('Portfolio data saved successfully');
         
-        // Verify data was saved correctly
-        const savedData = localStorage.getItem('current_portfolio');
-        if (savedData) {
-          const verifiedData = JSON.parse(savedData);
-          console.log('Verified saved data in localStorage:', verifiedData);
-          console.log('Portfolio name in saved data:', verifiedData.portfolio_data?.name);
+        setPortfolioData(portfolioData);
+        setUploadComplete(true);
+        
+        // Automatically deploy the portfolio
+        toast.success(`Portfolio generated for ${parsedData.name}! Deploying live website...`);
+        
+        const deploymentResult = await PortfolioDeploymentService.deployPortfolio(portfolioData);
+        
+        if (deploymentResult.success) {
+          toast.success(`🚀 Portfolio deployed successfully! Live at: ${deploymentResult.url}`);
           
-          setPortfolioData(portfolioData);
-          setUploadComplete(true);
-          
-          // Dispatch custom event to notify other components
-          window.dispatchEvent(new CustomEvent('portfolioUpdated', { detail: portfolioData }));
-          
-          toast.success(`Portfolio generated for ${parsedData.name}! You can now preview or edit it.`);
+          // Open deployed portfolio in new tab
+          setTimeout(() => {
+            window.open(deploymentResult.url, '_blank');
+          }, 1000);
         } else {
-          throw new Error('Data was not saved properly');
+          toast.error(`Deployment failed: ${deploymentResult.error}`);
+          toast.success(`Portfolio saved locally. You can deploy it manually from the preview page.`);
         }
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('portfolioUpdated', { detail: portfolioData }));
+        
       } catch (error) {
-        console.error('Failed to save portfolio data:', error);
-        toast.error('Failed to save portfolio data. Please try again.');
+        console.error('Failed to save/deploy portfolio:', error);
+        toast.error('Failed to process portfolio. Please try again.');
       }
 
       setSelectedFile(null);

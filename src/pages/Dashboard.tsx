@@ -34,17 +34,25 @@ const Dashboard = () => {
     // Load immediately
     loadPortfolio();
     
-    // Listen for custom portfolio update events
+    // Listen for custom portfolio update and deployment events
     const handlePortfolioUpdate = (e: CustomEvent) => {
       console.log('Portfolio updated event received:', e.detail);
       setPortfolio(e.detail);
       setLoading(false);
     };
     
+    const handlePortfolioDeployed = (e: CustomEvent) => {
+      console.log('Portfolio deployed event received:', e.detail);
+      setPortfolio(e.detail.portfolio);
+      toast.success(`🚀 Portfolio deployed! Live at: ${e.detail.url}`);
+    };
+    
     window.addEventListener('portfolioUpdated', handlePortfolioUpdate as EventListener);
+    window.addEventListener('portfolioDeployed', handlePortfolioDeployed as EventListener);
     
     return () => {
       window.removeEventListener('portfolioUpdated', handlePortfolioUpdate as EventListener);
+      window.removeEventListener('portfolioDeployed', handlePortfolioDeployed as EventListener);
     };
   }, []);
 
@@ -185,7 +193,7 @@ const Dashboard = () => {
                   </span>
                 </CardTitle>
                 <CardDescription>
-                  {window.location.origin}/portfolio/{portfolio?.subdomain || 'portfolio'}
+                  {portfolio?.deployed_url || `${window.location.origin}/portfolio/${portfolio?.subdomain || 'portfolio'}`}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -234,14 +242,14 @@ const Dashboard = () => {
                     Edit Portfolio
                   </Button>
 
-                  {portfolio.status === 'published' ? (
+                  {portfolio.status === 'published' && portfolio.deployed_url ? (
                     <Button
-                      onClick={() => window.open(`${window.location.origin}/portfolio/${portfolio.subdomain}`, '_blank')}
+                      onClick={() => window.open(portfolio.deployed_url, '_blank')}
                       variant="outline"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
                     >
                       <ExternalLink className="h-4 w-4" />
-                      View Live Site
+                      🌐 View Live Site
                     </Button>
                   ) : (
                     <Button
@@ -249,7 +257,7 @@ const Dashboard = () => {
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
                     >
                       <Globe className="h-4 w-4" />
-                      Deploy Live
+                      🚀 Deploy Live
                     </Button>
                   )}
 

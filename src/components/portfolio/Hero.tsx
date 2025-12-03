@@ -19,9 +19,9 @@ interface HeroProps {
 }
 
 const Hero = ({
-  name = "Your Name",
+  name = "",
   title = "Your Title",
-  tagline = "Your tagline here",
+  tagline = "Building Innovative Solutions with Modern Technologies",
   bio = "Your bio here",
   email,
   github,
@@ -169,17 +169,19 @@ const Hero = ({
                 <span className="font-mono text-sm">{title.toUpperCase()}</span>
               </div>
 
-              <h1 className="text-6xl md:text-8xl font-bold mb-6">
-                {name}
-              </h1>
+              {name && (
+                <h1 className="text-6xl md:text-8xl font-bold mb-6">
+                  {name}
+                </h1>
+              )}
 
-              <p className="text-xl md:text-2xl mb-8 text-muted-foreground font-mono">
-                {tagline}
-              </p>
+              {tagline && (
+                <p className="text-xl md:text-2xl mb-8 text-muted-foreground font-mono">
+                  {tagline}
+                </p>
+              )}
 
-              <p className="text-lg mb-12 max-w-2xl mx-auto">
-                {bio}
-              </p>
+
 
               <div className="flex flex-wrap gap-4 justify-center mb-8">
                 {email && (

@@ -27,40 +27,45 @@ export async function parseResume(file: File): Promise<ParsedResume> {
     
     let text = '';
     
+    // Enhanced file reading with better text extraction
     if (file.type === 'application/pdf') {
-      console.log('PDF file detected - limited text extraction available');
-      // For PDF files, we can only use filename for now
-      // In production, you'd use a PDF parsing library like pdf-parse
-      text = file.name;
-      console.log('PDF parsing not fully implemented - using filename only');
+      console.log('PDF file detected - attempting text extraction');
+      // For PDF files, try to read as text (works for text-based PDFs)
+      try {
+        text = await file.text();
+        console.log('PDF text extraction successful, length:', text.length);
+      } catch {
+        console.log('PDF text extraction failed, using filename');
+        text = file.name;
+      }
     } else if (file.type.includes('word') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-      console.log('Word document detected - limited text extraction');
-      // For Word docs, we'd need a library like mammoth.js
-      text = file.name;
+      console.log('Word document detected - attempting text extraction');
+      try {
+        text = await file.text();
+        console.log('Word document text extraction, length:', text.length);
+      } catch {
+        console.log('Word document extraction failed, using filename');
+        text = file.name;
+      }
     } else {
       // For text-based files, read content
       text = await file.text();
       console.log('Text file content length:', text.length);
     }
 
-    console.log('Available text for parsing:', text.substring(0, 200));
+    console.log('Available text for parsing (first 300 chars):', text.substring(0, 300));
 
-    // For now, create a simple extraction based on filename
+    // Enhanced parsing with actual text content
     const fileName = file.name.replace(/\.[^/.]+$/, "");
-    const cleanName = fileName.replace(/[-_]/g, " ").replace(/resume|cv/gi, '').trim();
-    const extractedName = cleanName.replace(/\b\w/g, l => l.toUpperCase()) || 'User Name';
     
-    console.log('Extracted name from filename:', extractedName);
-
-    // Create minimal real data structure
     const parsed = {
-      name: extractedName,
-      title: 'Professional',
-      email: 'user@example.com',
-      summary: `${extractedName} is a professional with expertise in their field.`,
-      skills: [],
-      experience: [],
-      projects: []
+      name: extractName(text, fileName),
+      title: extractTitle(text),
+      email: extractEmail(text),
+      summary: extractSummary(text) || `Building innovative solutions with modern technologies`,
+      skills: extractSkills(text),
+      experience: extractExperience(text),
+      projects: extractProjects(text)
     };
 
     console.log('Final parsed data:', parsed);
@@ -80,7 +85,7 @@ async function tryReadFileAsText(file: File): Promise<string> {
 }
 
 function extractName(text: string, fileName: string): string {
-  // Enhanced name extraction patterns
+  // Enhanced name extraction patterns - prioritize actual text content
   const namePatterns = [
     // Name at the beginning of resume
     /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/m,
@@ -94,28 +99,30 @@ function extractName(text: string, fileName: string): string {
     /^([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)(?:\s*\n|\s*$)/m
   ];
 
-  // Clean the text for better matching
-  const cleanText = text.replace(/[^\w\s@.\n\r-]/g, ' ').replace(/\s+/g, ' ');
-  
-  for (const pattern of namePatterns) {
-    const match = cleanText.match(pattern);
-    if (match && match[1]) {
-      const name = match[1].trim();
-      // Validate it looks like a real name (2-3 words, proper case)
-      if (name.length > 3 && name.length < 50 && /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(name)) {
-        return name;
+  // Only use text content if it's substantial (not just filename)
+  if (text && text.length > 50) {
+    const cleanText = text.replace(/[^\w\s@.\n\r-]/g, ' ').replace(/\s+/g, ' ');
+    
+    for (const pattern of namePatterns) {
+      const match = cleanText.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        // Validate it looks like a real name (2-3 words, proper case)
+        if (name.length > 3 && name.length < 50 && /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(name)) {
+          return name;
+        }
       }
     }
   }
 
-  // Last resort: use filename but only if it looks like a name
-  const fileName2 = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-  const fileBasedName = fileName2.replace(/\b\w/g, l => l.toUpperCase());
-  if (/^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(fileBasedName)) {
-    return fileBasedName;
+  // Only use filename as last resort if it clearly looks like a name (not just any filename)
+  const cleanFileName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").replace(/resume|cv/gi, '').trim();
+  if (cleanFileName && /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(cleanFileName)) {
+    return cleanFileName.replace(/\b\w/g, l => l.toUpperCase());
   }
   
-  return 'Candidate Name';
+  // Return empty string instead of placeholder - let UI handle the fallback
+  return '';
 }
 
 function extractEmail(text: string): string {

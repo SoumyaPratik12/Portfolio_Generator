@@ -49,8 +49,8 @@ const Index = () => {
             </h1>
             
             <p className="text-xl md:text-2xl mb-12 text-primary-foreground font-mono max-w-2xl mx-auto">
-              Transform your resume into a stunning portfolio website in seconds. 
-              No code. No design skills. Just upload and publish.
+              Transform your resume into a live portfolio website instantly. 
+              Upload → Parse → Deploy. Your site goes live automatically.
             </p>
             
             <div className="flex justify-center mb-12">
@@ -69,11 +69,11 @@ const Index = () => {
             <div className="flex items-center justify-center gap-8 text-primary-foreground font-mono text-sm">
               <span className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
-                AI-POWERED
+                AI-POWERED PARSING
               </span>
               <span className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
-                INSTANT DEPLOY
+                AUTO-DEPLOYMENT
               </span>
             </div>
           </div>
@@ -101,8 +101,8 @@ const Index = () => {
               },
               {
                 step: "03",
-                title: "PUBLISH",
-                desc: "One click to deploy. Get your own subdomain or connect a custom domain."
+                title: "AUTO-DEPLOY",
+                desc: "Your portfolio automatically goes live with a personalized URL. Share it instantly."
               }
             ].map((item) => (
               <div key={item.step} className="border-4 border-primary bg-background p-8 shadow-lg">
@@ -157,7 +157,7 @@ const Index = () => {
               "Mobile Responsive",
               "Custom Domains",
               "SEO Optimized",
-              "One-Click Deploy",
+              "Auto-Deploy Live",
               "Real-time Preview",
               "Auto-save & Versioning"
             ].map((feature) => (

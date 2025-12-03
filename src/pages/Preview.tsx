@@ -231,9 +231,9 @@ const Preview = () => {
           </div>
         )}
         <Hero
-          name={portfolioData.name || "Your Name"}
+          name={portfolioData.name || ""}
           title={portfolioData.title || "Your Title"}
-          tagline={portfolioData.tagline || "Your tagline"}
+          tagline={portfolioData.tagline || ""}
           bio={portfolioData.bio || "Your bio"}
           email={portfolioData.email}
           github={portfolioData.github}
