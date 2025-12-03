@@ -32,12 +32,21 @@ export async function parseResume(file: File): Promise<ParsedResume> {
     
     console.log('Extracted name from filename:', extractedName);
 
-    // Create simple parsed data structure
+    // Try to read file content for better parsing
+    let fileContent = '';
+    try {
+      fileContent = await file.text();
+      console.log('File content extracted, length:', fileContent.length);
+    } catch (error) {
+      console.log('Could not extract file content, using defaults');
+    }
+
+    // Create parsed data structure with extracted content
     const parsed = {
       name: extractedName,
-      title: 'Software Engineer',
-      email: 'user@example.com',
-      summary: 'Building innovative solutions with modern technologies',
+      title: extractTitle(fileContent) || 'Software Engineer',
+      email: extractEmail(fileContent) || 'user@example.com',
+      summary: extractSummary(fileContent) || 'Building innovative solutions with modern technologies',
       skills: [
         { name: 'JavaScript', category: 'Frontend' },
         { name: 'React', category: 'Frontend' },
@@ -185,35 +194,29 @@ function extractTitle(text: string): string {
 }
 
 function extractSummary(text: string): string {
+  if (!text || text.length < 50) return '';
+  
   // Enhanced summary extraction patterns
   const summaryPatterns = [
+    // SUMMARY section (most common)
+    /SUMMARY[\s\S]*?([•\s\S]*?)(?=\n\s*[A-Z]{2,}|\n\s*EXPERIENCE|\n\s*EDUCATION|\n\s*SKILLS|$)/i,
     // Labeled sections
     /(?:summary|objective|about|profile|overview)[:\s]+([\s\S]*?)(?:\n\s*(?:experience|education|skills|projects)|$)/i,
     // Professional summary
     /(?:professional\s+summary|career\s+summary)[:\s]+([\s\S]*?)(?:\n\s*(?:experience|education|skills)|$)/i,
-    // First paragraph after name/contact
-    /(?:@[\w.]+|\+?\d[\d\s\-()]+)[\s\n]+([A-Z][^\n]*(?:\n[^\n]*){0,3})(?:\n\s*(?:experience|skills|education)|$)/i
+    // Bullet points after summary header
+    /SUMMARY[\s\n]+([•][\s\S]*?)(?=\n\s*[A-Z]{2,}|$)/i
   ];
   
   for (const pattern of summaryPatterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
-      const summary = match[1].trim().replace(/\s+/g, ' ');
-      if (summary.length > 30 && summary.length < 500) {
+      let summary = match[1].trim();
+      // Clean up bullet points and extra whitespace
+      summary = summary.replace(/^[•\s]+/gm, '• ').replace(/\s+/g, ' ');
+      if (summary.length > 50 && summary.length < 2000) {
         return summary;
       }
-    }
-  }
-  
-  // Look for descriptive paragraphs near the top
-  const lines = text.split('\n');
-  for (let i = 0; i < Math.min(10, lines.length); i++) {
-    const line = lines[i].trim();
-    if (line.length > 50 && line.length < 300 && 
-        /^[A-Z]/.test(line) && 
-        !/@/.test(line) && 
-        !/\d{4}/.test(line)) {
-      return line;
     }
   }
   
