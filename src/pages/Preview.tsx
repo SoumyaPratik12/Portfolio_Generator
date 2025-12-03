@@ -233,8 +233,6 @@ const Preview = () => {
         <Hero
           name={portfolioData.name || ""}
           title={portfolioData.title || ""}
-          tagline={portfolioData.tagline || ""}
-          bio={portfolioData.bio || ""}
           email={portfolioData.email}
           github={portfolioData.github}
           linkedin={portfolioData.linkedin}

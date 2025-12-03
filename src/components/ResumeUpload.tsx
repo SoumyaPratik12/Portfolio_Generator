@@ -92,8 +92,6 @@ export default function ResumeUpload() {
       const parsedData = {
         name: parsedResume.name,
         title: parsedResume.title,
-        tagline: "Building Innovative Solutions with Modern Technologies",
-        bio: parsedResume.summary || '',
         email: parsedResume.email,
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
