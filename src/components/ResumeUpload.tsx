@@ -82,17 +82,20 @@ export default function ResumeUpload() {
 
       fileSchema.parse({ file: selectedFile });
 
-      setUploading(true);
       toast.success("Parsing resume and generating live portfolio...");
-      console.log('About to parse file:', selectedFile.name);
+      console.log('About to parse file:', selectedFile.name, 'Size:', selectedFile.size, 'Type:', selectedFile.type);
       
       const parsedResume = await parseResume(selectedFile);
       console.log('Received parsed resume:', parsedResume);
       
+      if (!parsedResume) {
+        throw new Error('Resume parsing returned null or undefined');
+      }
+      
       const parsedData = {
-        name: parsedResume.name,
-        title: parsedResume.title,
-        email: parsedResume.email,
+        name: parsedResume.name || '',
+        title: parsedResume.title || 'Professional',
+        email: parsedResume.email || 'user@example.com',
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
         resumeUrl: "#",
@@ -153,7 +156,7 @@ export default function ResumeUpload() {
         setUploadComplete(true);
         
         // Automatically deploy the portfolio
-        toast.success(`Portfolio generated for ${parsedData.name}! Deploying live website...`);
+        toast.success(`Portfolio generated for ${parsedData.name || 'User'}! Deploying live website...`);
         
         const deploymentResult = await PortfolioDeploymentService.deployPortfolio(portfolioData);
         
