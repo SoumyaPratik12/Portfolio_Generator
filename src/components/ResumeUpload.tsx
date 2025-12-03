@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { z } from "zod";
+import { parseResume } from "@/lib/resumeParser";
+import { supabase } from "@/integrations/supabase/client";
 
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -84,96 +86,50 @@ export default function ResumeUpload() {
       toast.success("Parsing resume... This may take a few seconds.");
 
       // Parse resume data from uploaded file
-      const fileName = selectedFile.name.replace(/\.[^/.]+$/, ""); // Remove extension
-      const mockParsedData = {
-        name: fileName.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
-        title: "Software Engineer",
-        tagline: "Building innovative solutions with modern technologies",
-        bio: `Passionate professional with experience in software development and technology solutions.`,
-        email: "your.email@example.com",
-        phone: "+1 (555) 000-0000",
+      toast.success("Parsing resume... Extracting your information.");
+      const parsedResume = await parseResume(selectedFile);
+      
+      const parsedData = {
+        name: parsedResume.name,
+        title: parsedResume.title,
+        tagline: `${parsedResume.title} with expertise in modern technologies`,
+        bio: parsedResume.summary,
+        email: parsedResume.email,
+        phone: parsedResume.phone,
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
         resumeUrl: "#",
-        about: "I'm a results-driven software engineer with a passion for creating efficient, scalable solutions. With over 6 years of experience in the tech industry, I've successfully delivered 15+ production applications serving millions of users. I specialize in modern web technologies and have a proven track record of improving system performance by up to 40%.",
+        about: parsedResume.summary,
         stats: {
-          yearsExperience: 6,
-          projectsCompleted: 15,
-          usersImpacted: "2M+"
+          yearsExperience: parsedResume.experience.length,
+          projectsCompleted: parsedResume.projects.length,
+          usersImpacted: "1K+"
         },
-        skills: [
-          { name: "JavaScript", category: "Frontend" },
-          { name: "React", category: "Frontend" },
-          { name: "TypeScript", category: "Frontend" },
-          { name: "Node.js", category: "Backend" },
-          { name: "Python", category: "Backend" },
-          { name: "PostgreSQL", category: "Database" },
-          { name: "AWS", category: "Cloud" },
-          { name: "Docker", category: "DevOps" }
-        ],
-        experience: [
-          {
-            title: "Senior Software Engineer",
-            company: "TechCorp Inc.",
-            duration: "2021 - Present",
-            location: "San Francisco, CA",
-            description: "Lead development of microservices architecture serving 1M+ daily active users. Improved system performance by 35% through optimization and caching strategies.",
-            achievements: [
-              "Reduced API response time by 40% through database optimization",
-              "Led team of 5 engineers in migrating legacy systems to cloud",
-              "Implemented CI/CD pipeline reducing deployment time by 60%"
-            ]
-          },
-          {
-            title: "Full Stack Developer",
-            company: "StartupXYZ",
-            duration: "2019 - 2021",
-            location: "Remote",
-            description: "Built and maintained customer-facing web applications using React and Node.js. Collaborated with design team to implement responsive UI components.",
-            achievements: [
-              "Developed 3 major features increasing user engagement by 25%",
-              "Mentored 2 junior developers",
-              "Reduced bug reports by 30% through comprehensive testing"
-            ]
-          }
-        ],
-        projects: [
-          {
-            title: "E-commerce Analytics Dashboard",
-            description: "Real-time analytics platform for e-commerce businesses with interactive charts and reporting features. Processes 100K+ transactions daily.",
-            technologies: ["React", "Node.js", "PostgreSQL", "Redis", "AWS"],
-            link: "https://github.com/yourusername/ecommerce-analytics",
-            liveUrl: "https://analytics-demo.com",
-            image: "/api/placeholder/600/400",
-            metrics: "Increased client revenue by 22%"
-          },
-          {
-            title: "Task Management API",
-            description: "RESTful API for task management with authentication, real-time updates, and team collaboration features. Built with scalability in mind.",
-            technologies: ["Node.js", "Express", "MongoDB", "Socket.io", "JWT"],
-            link: "https://github.com/yourusername/task-api",
-            metrics: "Supports 10K+ concurrent users"
-          },
-          {
-            title: "Weather Forecast App",
-            description: "Mobile-responsive weather application with location-based forecasts, interactive maps, and weather alerts.",
-            technologies: ["React", "TypeScript", "OpenWeather API", "Mapbox"],
-            link: "https://github.com/yourusername/weather-app",
-            liveUrl: "https://weather-forecast-demo.com",
-            metrics: "50K+ monthly active users"
-          }
-        ],
+        skills: parsedResume.skills,
+        experience: parsedResume.experience,
+        projects: parsedResume.projects,
+        education: parsedResume.education,
         contact: {
-          email: "your.email@example.com",
-          phone: "+1 (555) 000-0000",
+          email: parsedResume.email,
+          phone: parsedResume.phone,
           linkedin: "https://linkedin.com/in/yourusername",
           github: "https://github.com/yourusername",
           location: "Your City, State"
         }
       };
 
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload file to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `resumes/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('resumes')
+        .upload(filePath, selectedFile);
+      
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
       // Create portfolio data with unique ID
       const portfolioData = {
@@ -181,10 +137,27 @@ export default function ResumeUpload() {
         subdomain: `portfolio-${Date.now()}`,
         status: 'draft',
         visibility: 'private',
-        portfolio_data: mockParsedData,
+        portfolio_data: parsedData,
+        resume_file_path: filePath,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+      
+      // Save to Supabase database
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: portfolioData.id,
+          parsed_json: parsedData,
+          resume_s3_key: filePath,
+          status: 'parsed',
+          updated_at: new Date().toISOString()
+        });
+      
+      if (dbError) {
+        console.error('Database save error:', dbError);
+        // Continue with localStorage fallback
+      }
 
       toast.success("Resume parsed successfully! Redirecting to preview...");
 
