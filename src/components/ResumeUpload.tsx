@@ -142,7 +142,7 @@ export default function ResumeUpload() {
             title: "E-commerce Analytics Dashboard",
             description: "Real-time analytics platform for e-commerce businesses with interactive charts and reporting features. Processes 100K+ transactions daily.",
             technologies: ["React", "Node.js", "PostgreSQL", "Redis", "AWS"],
-            link: "https://github.com/sarahjohnson/ecommerce-analytics",
+            link: "https://github.com/yourusername/ecommerce-analytics",
             liveUrl: "https://analytics-demo.com",
             image: "/api/placeholder/600/400",
             metrics: "Increased client revenue by 22%"
@@ -151,24 +151,24 @@ export default function ResumeUpload() {
             title: "Task Management API",
             description: "RESTful API for task management with authentication, real-time updates, and team collaboration features. Built with scalability in mind.",
             technologies: ["Node.js", "Express", "MongoDB", "Socket.io", "JWT"],
-            link: "https://github.com/sarahjohnson/task-api",
+            link: "https://github.com/yourusername/task-api",
             metrics: "Supports 10K+ concurrent users"
           },
           {
             title: "Weather Forecast App",
             description: "Mobile-responsive weather application with location-based forecasts, interactive maps, and weather alerts.",
             technologies: ["React", "TypeScript", "OpenWeather API", "Mapbox"],
-            link: "https://github.com/sarahjohnson/weather-app",
+            link: "https://github.com/yourusername/weather-app",
             liveUrl: "https://weather-forecast-demo.com",
             metrics: "50K+ monthly active users"
           }
         ],
         contact: {
-          email: "sarah.johnson@email.com",
-          phone: "+1 (555) 123-4567",
-          linkedin: "https://linkedin.com/in/sarahjohnson",
-          github: "https://github.com/sarahjohnson",
-          location: "San Francisco, CA"
+          email: "your.email@example.com",
+          phone: "+1 (555) 000-0000",
+          linkedin: "https://linkedin.com/in/yourusername",
+          github: "https://github.com/yourusername",
+          location: "Your City, State"
         }
       };
 

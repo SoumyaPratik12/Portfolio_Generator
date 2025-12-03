@@ -83,7 +83,7 @@ const Preview = () => {
             }
           };
           setPortfolio(defaultPortfolio);
-          toast.error('No portfolio data found. Using default data for preview.');
+          console.log('No portfolio data found in localStorage. Using default data for preview.');
         }
       } catch (error) {
         console.error('Error loading portfolio:', error);
@@ -136,7 +136,7 @@ const Preview = () => {
     setDeploying(true);
     try {
       // Generate personalized subdomain from user's name
-      const userName = portfolioData.name || 'user';
+      const userName = portfolio.portfolio_data?.name || 'user';
       const subdomain = generateSubdomain(userName);
       const deployedUrl = `https://${subdomain}.${getPortfolioDomain()}`;
       
