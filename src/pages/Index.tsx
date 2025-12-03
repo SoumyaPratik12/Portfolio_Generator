@@ -53,7 +53,7 @@ const Index = () => {
               No code. No design skills. Just upload and publish.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="flex justify-center mb-12">
               <Button
                 size="lg"
                 asChild
@@ -63,18 +63,6 @@ const Index = () => {
                   <FileUp className="mr-2 h-5 w-5" />
                   UPLOAD RESUME
                 </a>
-              </Button>
-              
-              <Button 
-                size="lg"
-                variant="outline"
-                asChild
-                className="text-lg px-8 py-6 border-2 border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary transition-all"
-              >
-                <Link to="/portfolio/demo">
-                  VIEW DEMO
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
               </Button>
             </div>
             
@@ -150,18 +138,7 @@ const Index = () => {
               />
             </div>
             
-            <div className="text-center mt-12">
-              <Button 
-                size="lg"
-                asChild
-                className="text-lg px-12 py-6 border-2 border-primary bg-primary hover:bg-foreground hover:text-background transition-all shadow-md"
-              >
-                <Link to="/portfolio/demo">
-                  EXPLORE DEMO SITE
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            </div>
+
           </div>
         </div>
       </section>
