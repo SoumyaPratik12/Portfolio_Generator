@@ -1,40 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, X } from "lucide-react";
 
 interface AboutProps {
-  about?: string;
-  stats?: {
-    yearsExperience?: number;
-    projectsCompleted?: number;
-    usersImpacted?: string;
-  };
+  // parsed summary from resume (should be profile.summary or profile.parsed.summary)
+  about?: string | null;
   isEditing?: boolean;
-  onUpdate?: (data: { about: string; stats: { yearsExperience: number; projectsCompleted: number; usersImpacted: string; } }) => void;
+  // only about updated now (no stats)
+  onUpdate?: (data: { about: string }) => void;
 }
 
 const About = ({
-  about = "Tell us about yourself...",
-  stats = { yearsExperience: 0, projectsCompleted: 0, usersImpacted: "0" },
+  about = null,
   isEditing = false,
   onUpdate
 }: AboutProps) => {
-  const [editData, setEditData] = useState({
-    about,
-    stats: {
-      yearsExperience: stats.yearsExperience || 0,
-      projectsCompleted: stats.projectsCompleted || 0,
-      usersImpacted: stats.usersImpacted || "0"
-    }
-  });
+  // keep internal state and sync if prop changes (important after parser updates DB)
+  const [editAbout, setEditAbout] = useState<string>(about ?? "");
+
+  useEffect(() => {
+    setEditAbout(about ?? "");
+  }, [about]);
 
   const handleSave = () => {
     try {
       if (onUpdate) {
-        onUpdate(editData);
+        onUpdate({ about: editAbout.trim() });
       }
     } catch (error) {
       console.error('Failed to save about data:', error);
@@ -42,15 +34,9 @@ const About = ({
   };
 
   const handleCancel = () => {
-    setEditData({
-      about,
-      stats: {
-        yearsExperience: stats.yearsExperience || 0,
-        projectsCompleted: stats.projectsCompleted || 0,
-        usersImpacted: stats.usersImpacted || "0"
-      }
-    });
+    setEditAbout(about ?? "");
   };
+
   return (
     <section id="about" className="py-24 bg-secondary">
       <div className="container mx-auto px-4">
@@ -74,66 +60,26 @@ const About = ({
                 </Button>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="about">About</Label>
-                  <Textarea
-                    id="about"
-                    value={editData.about}
-                    onChange={(e) => setEditData({...editData, about: e.target.value})}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="yearsExperience">Years Experience</Label>
-                    <Input
-                      id="yearsExperience"
-                      type="number"
-                      value={editData.stats.yearsExperience}
-                      onChange={(e) => setEditData({...editData, stats: {...editData.stats, yearsExperience: parseInt(e.target.value) || 0}})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="projectsCompleted">Projects Completed</Label>
-                    <Input
-                      id="projectsCompleted"
-                      type="number"
-                      value={editData.stats.projectsCompleted}
-                      onChange={(e) => setEditData({...editData, stats: {...editData.stats, projectsCompleted: parseInt(e.target.value) || 0}})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="usersImpacted">Users Impacted</Label>
-                    <Input
-                      id="usersImpacted"
-                      value={editData.stats.usersImpacted}
-                      onChange={(e) => setEditData({...editData, stats: {...editData.stats, usersImpacted: e.target.value}})}
-                    />
-                  </div>
-                </div>
+              <div>
+                <Textarea
+                  id="about"
+                  value={editAbout}
+                  onChange={(e) => setEditAbout(e.target.value)}
+                  rows={6}
+                />
               </div>
             </div>
           ) : (
             <>
+              {/* Render the parsed about/summary only. If none, show a subtle CTA instead of placeholder text */}
               <div className="space-y-6 text-lg">
-                <p>{about}</p>
-              </div>
-
-              <div className="mt-12 grid md:grid-cols-3 gap-8">
-                <div className="border-4 border-primary p-6 bg-background">
-                  <div className="text-4xl font-bold font-mono mb-2">{stats.yearsExperience}+</div>
-                  <div className="text-muted-foreground">Years Experience</div>
-                </div>
-                <div className="border-4 border-primary p-6 bg-background">
-                  <div className="text-4xl font-bold font-mono mb-2">{stats.projectsCompleted}+</div>
-                  <div className="text-muted-foreground">Projects Completed</div>
-                </div>
-                <div className="border-4 border-primary p-6 bg-background">
-                  <div className="text-4xl font-bold font-mono mb-2">{stats.usersImpacted}</div>
-                  <div className="text-muted-foreground">Users Impacted</div>
-                </div>
+                {about ? (
+                  <p className="whitespace-pre-line">{about}</p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No summary found — upload a resume or click Edit to add your summary.
+                  </p>
+                )}
               </div>
             </>
           )}

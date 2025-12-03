@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,18 @@ const Hero = ({
     linkedin,
     resumeUrl
   });
+
+  // Sync incoming props to local state whenever props change
+  useEffect(() => {
+    setEditData({
+      name: name ?? "",
+      title: title ?? "",
+      email: email ?? undefined,
+      github: github ?? undefined,
+      linkedin: linkedin ?? undefined,
+      resumeUrl: resumeUrl ?? undefined
+    });
+  }, [name, title, email, github, linkedin, resumeUrl]);
 
   const handleSave = () => {
     try {

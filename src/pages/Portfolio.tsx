@@ -42,8 +42,6 @@ const Portfolio = () => {
         const demoData = {
           name: "Sarah Johnson",
           title: "Senior Software Engineer",
-          tagline: "Building scalable web applications with modern technologies",
-          bio: "Passionate software engineer with 6+ years of experience in full-stack development, specializing in React, Node.js, and cloud technologies.",
           email: "sarah.johnson@email.com",
           phone: "+1 (555) 123-4567",
           github: "https://github.com/sarahjohnson",
@@ -161,7 +159,6 @@ const Portfolio = () => {
       />
       <About
         about={portfolioData.about}
-        stats={portfolioData.stats}
       />
       <Skills skills={portfolioData.skills} />
       <Projects projects={portfolioData.projects} />

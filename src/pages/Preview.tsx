@@ -244,11 +244,10 @@ const Preview = () => {
           }}
         />
         <About
-          about={portfolioData.about || "Tell us about yourself..."}
-          stats={portfolioData.stats || { yearsExperience: 0, projectsCompleted: 0, usersImpacted: "0" }}
+          about={portfolioData.about}
           isEditing={isEditing}
           onUpdate={(data) => {
-            const newPortfolioData = { ...portfolioData, about: data.about, stats: data.stats };
+            const newPortfolioData = { ...portfolioData, about: data.about };
             updatePortfolioData(newPortfolioData);
           }}
         />
