@@ -64,65 +64,109 @@ async function enhancedExtraction(content: string, fileName: string): Promise<Lo
 function extractNameEnhanced(text: string, fileName: string): string {
   console.log('Extracting name from content, text length:', text.length);
   
-  // Only extract from actual resume content, never from filename
   if (!text || text.length < 20) {
     console.log('Insufficient text content for name extraction');
-    return ''; // Return empty string, not filename
+    return extractNameFromFilename(fileName);
   }
   
-  // Enhanced name extraction patterns - prioritize content
+  // Clean text first
+  const cleanText = text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Enhanced name extraction patterns
   const patterns = [
-    // Name at document start
-    /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*$/m,
-    // Name with label
-    /(?:Name|Full Name)[:\s]+([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    // Name at very beginning (first 200 chars)
+    /^\s*([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)(?:\s|\n|$)/,
     // All caps name at start
-    /^\s*([A-Z]{2,}\s+[A-Z]{2,}(?:\s+[A-Z]{2,})?)\s*$/m,
-    // Name before contact info
-    /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+)\s*[\n\r].*(?:@|\+|\d{3})/m,
-    // First line that looks like a name
-    /^\s*([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)\s*$/m
+    /^\s*([A-Z]{2,}\s+[A-Z]{2,}(?:\s+[A-Z]{2,})?)(?:\s|\n|$)/,
+    // Name with label
+    /(?:Name|Full Name)[:\s]+([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/i,
+    // Name before contact (email/phone)
+    /([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)\s*[\n\r].*(?:@[\w.-]+\.[a-zA-Z]{2,}|\+?\d{3})/,
+    // Name in first few lines
+    /^(?:[^\n]*\n){0,2}\s*([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)(?:\s|\n|$)/m
   ];
   
+  const firstPart = cleanText.substring(0, 500);
+  
   for (const pattern of patterns) {
-    const match = text.match(pattern);
+    const match = firstPart.match(pattern);
     if (match && match[1]) {
       const name = match[1].trim();
-      // Validate it's a real name, not a title or other text
-      if (name.length > 3 && name.length < 50 && 
-          /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(name) &&
-          !/(engineer|developer|manager|analyst|specialist)/i.test(name)) {
+      if (isValidName(name)) {
         console.log('Extracted name from content:', name);
         return name;
       }
     }
   }
   
-  console.log('No valid name found in resume content');
-  return ''; // Never use filename
+  console.log('No valid name found in resume content, trying filename');
+  return extractNameFromFilename(fileName);
+}
+
+function isValidName(name: string): boolean {
+  return name.length > 3 && name.length < 50 && 
+         /^[A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+/.test(name) &&
+         !/(engineer|developer|manager|analyst|specialist|resume|cv|document)/i.test(name);
+}
+
+function extractNameFromFilename(fileName: string): string {
+  const cleanFileName = fileName
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/resume|cv/gi, '')
+    .trim();
+  
+  if (cleanFileName && /^[A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+/.test(cleanFileName)) {
+    return cleanFileName.replace(/\b\w/g, l => l.toUpperCase());
+  }
+  
+  return 'Professional';
 }
 
 function extractTitleEnhanced(text: string): string {
   console.log('Extracting title from resume content');
   
-  const topSection = text.substring(0, 500);
+  const cleanText = text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  const topSection = cleanText.substring(0, 800);
   
   const titlePatterns = [
-    /(?:senior|junior|lead|principal|staff)\s+(?:software|web|full.?stack|frontend|backend|mobile)\s+(?:engineer|developer|programmer)/i,
-    /(?:software|web|full.?stack|frontend|backend|mobile)\s+(?:engineer|developer|programmer)/i,
-    /(?:data|machine learning|ai|ml)\s+(?:scientist|engineer|analyst)/i,
-    /(?:product|project|program)\s+manager/i,
-    /(?:devops|cloud|infrastructure)\s+engineer/i,
-    /\n\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:Engineer|Developer|Manager|Analyst|Designer|Scientist))\s*\n/i,
-    /\b(Software Engineer|Web Developer|Data Scientist|Product Manager|DevOps Engineer)\b/i
+    // Common job titles with seniority
+    /\b((?:Senior|Junior|Lead|Principal|Staff|Chief)\s+(?:Software|Web|Full[\s-]?Stack|Frontend|Backend|Mobile|Data|DevOps|Cloud)\s+(?:Engineer|Developer|Programmer|Scientist|Analyst))\b/i,
+    // Basic job titles
+    /\b((?:Software|Web|Full[\s-]?Stack|Frontend|Backend|Mobile)\s+(?:Engineer|Developer|Programmer))\b/i,
+    // Data roles
+    /\b((?:Data|Machine Learning|AI|ML)\s+(?:Scientist|Engineer|Analyst))\b/i,
+    // Management roles
+    /\b((?:Product|Project|Program|Engineering)\s+Manager)\b/i,
+    // DevOps and Cloud
+    /\b((?:DevOps|Cloud|Infrastructure|Platform)\s+Engineer)\b/i,
+    // Design roles
+    /\b((?:UI\/UX|UX|UI)\s+(?:Designer|Developer))\b/i,
+    // After name, before contact
+    /([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)\s*[\n\r]+\s*([A-Z][a-zA-Z\s]+(?:Engineer|Developer|Manager|Analyst|Designer|Scientist))\s*[\n\r]/i,
+    // Title on separate line
+    /\n\s*([A-Z][a-zA-Z\s]+(?:Engineer|Developer|Manager|Analyst|Designer|Scientist))\s*\n/i
   ];
   
   for (const pattern of titlePatterns) {
     const match = topSection.match(pattern);
     if (match) {
-      const title = match[1] || match[0];
-      console.log('Extracted title:', title);
-      return title.trim();
+      const title = (match[2] || match[1] || match[0]).trim();
+      if (title.length > 5 && title.length < 60 && !/(name|email|phone|address)/i.test(title)) {
+        console.log('Extracted title:', title);
+        return title;
+      }
     }
   }
   
@@ -130,8 +174,28 @@ function extractTitleEnhanced(text: string): string {
 }
 
 function extractEmailEnhanced(text: string): string {
-  const emailMatch = text.match(/[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}/);
-  return emailMatch?.[0] || 'user@example.com';
+  const cleanText = text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ');
+  
+  const emailPatterns = [
+    /\b([a-zA-Z0-9][a-zA-Z0-9._-]*@[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g,
+    /(?:email|e-mail)[:\s]*([a-zA-Z0-9][a-zA-Z0-9._-]*@[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i
+  ];
+  
+  for (const pattern of emailPatterns) {
+    const matches = cleanText.match(pattern);
+    if (matches) {
+      const email = matches[0].replace(/^(?:email|e-mail)[:\s]*/i, '');
+      if (email.includes('@') && email.includes('.')) {
+        console.log('Extracted email:', email);
+        return email;
+      }
+    }
+  }
+  
+  return 'user@example.com';
 }
 
 function extractSummaryEnhanced(text: string): string {
@@ -329,9 +393,14 @@ function isValidSkill(skill: string): boolean {
 
 function getDefaultSkills(): Array<{ name: string; category: string }> {
   return [
-    { name: 'JavaScript', category: 'Frontend' },
+    { name: 'JavaScript', category: 'Programming Languages' },
+    { name: 'Python', category: 'Programming Languages' },
     { name: 'React', category: 'Frontend' },
-    { name: 'Node.js', category: 'Backend' }
+    { name: 'Node.js', category: 'Backend' },
+    { name: 'SQL', category: 'Database' },
+    { name: 'Git', category: 'Tools & Software' },
+    { name: 'Problem Solving', category: 'Soft Skills' },
+    { name: 'Communication', category: 'Soft Skills' }
   ];
 }
 
@@ -430,11 +499,15 @@ function extractExperienceEnhanced(text: string): Array<any> {
   
   return [{
     title: 'Software Engineer',
-    company: 'Tech Company', 
-    duration: '2020 - Present',
+    company: 'Technology Company', 
+    duration: '2022 - Present',
     location: 'Remote',
-    description: 'Developing scalable applications',
-    achievements: ['Built modern web applications']
+    description: 'Developing modern web applications and software solutions using cutting-edge technologies.',
+    achievements: [
+      'Built responsive web applications using modern frameworks',
+      'Collaborated with cross-functional teams to deliver high-quality software',
+      'Implemented best practices for code quality and performance optimization'
+    ]
   }];
 }
 
@@ -518,12 +591,20 @@ function extractProjectsEnhanced(text: string): Array<any> {
     return parseProjectEntries(projectsSection);
   }
   
-  return [{
-    title: 'Portfolio Website',
-    description: 'Modern portfolio showcasing technical skills', 
-    technologies: ['React', 'TypeScript'],
-    link: 'https://github.com/username/portfolio'
-  }];
+  return [
+    {
+      title: 'Portfolio Website',
+      description: 'A responsive portfolio website showcasing professional skills and projects with modern design and smooth user experience.',
+      technologies: ['React', 'TypeScript', 'Tailwind CSS'],
+      link: 'https://github.com/username/portfolio'
+    },
+    {
+      title: 'Web Application',
+      description: 'Full-stack web application with user authentication, data management, and real-time features.',
+      technologies: ['JavaScript', 'Node.js', 'MongoDB'],
+      link: 'https://github.com/username/webapp'
+    }
+  ];
 }
 
 function parseProjectEntries(section: string): Array<any> {
@@ -595,27 +676,41 @@ function extractSection(text: string, sectionNames: string[]): string | null {
 }
 
 async function fallbackParsing(file: File): Promise<LovableParseResult> {
-  console.log('Using fallback parsing - no filename extraction');
+  console.log('Using fallback parsing');
+  
+  const nameFromFile = extractNameFromFilename(file.name);
   
   return {
-    name: '', // Never use filename as name
+    name: nameFromFile,
     title: 'Software Engineer',
     email: 'user@example.com',
-    summary: 'Building innovative solutions with modern technologies',
+    summary: 'Passionate software engineer with expertise in modern web technologies and a strong commitment to delivering high-quality solutions.',
     skills: getDefaultSkills(),
     experience: [{
       title: 'Software Engineer',
-      company: 'Tech Company',
-      duration: '2020 - Present',
+      company: 'Technology Company',
+      duration: '2022 - Present',
       location: 'Remote',
-      description: 'Developing modern applications',
-      achievements: ['Built scalable solutions']
+      description: 'Developing modern web applications and software solutions using cutting-edge technologies.',
+      achievements: [
+        'Built responsive web applications using modern frameworks',
+        'Collaborated with cross-functional teams to deliver high-quality software',
+        'Implemented best practices for code quality and performance optimization'
+      ]
     }],
-    projects: [{
-      title: 'Portfolio Project',
-      description: 'Showcasing technical expertise',
-      technologies: ['React', 'TypeScript'],
-      link: 'https://github.com/username/project'
-    }]
+    projects: [
+      {
+        title: 'Portfolio Website',
+        description: 'A responsive portfolio website showcasing professional skills and projects with modern design and smooth user experience.',
+        technologies: ['React', 'TypeScript', 'Tailwind CSS'],
+        link: 'https://github.com/username/portfolio'
+      },
+      {
+        title: 'Web Application',
+        description: 'Full-stack web application with user authentication, data management, and real-time features.',
+        technologies: ['JavaScript', 'Node.js', 'MongoDB'],
+        link: 'https://github.com/username/webapp'
+      }
+    ]
   };
 }

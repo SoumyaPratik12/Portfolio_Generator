@@ -94,44 +94,64 @@ async function tryReadFileAsText(file: File): Promise<string> {
 }
 
 function extractName(text: string, fileName: string): string {
-  // Enhanced name extraction patterns - prioritize actual text content
+  if (!text || text.length < 20) {
+    return extractNameFromFilename(fileName);
+  }
+  
+  // Clean text first
+  const cleanText = text
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
   const namePatterns = [
-    // Name at the beginning of resume
-    /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/m,
+    // Name at very beginning
+    /^\s*([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)(?:\s|\n|$)/,
+    // All caps name at start
+    /^\s*([A-Z]{2,}\s+[A-Z]{2,}(?:\s+[A-Z]{2,})?)(?:\s|\n|$)/,
     // Name with label
-    /(?:Name|Full Name)[:\s]+([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
-    // Name in all caps at start
-    /^\s*([A-Z]{2,}\s+[A-Z]{2,}(?:\s+[A-Z]{2,})?)/m,
-    // Name followed by contact info
-    /^\s*([A-Z][a-z]+\s+[A-Z][a-z]+)\s*[\n\r].*(?:@|\+|\d{3})/m,
-    // Name in header section
-    /^([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)(?:\s*\n|\s*$)/m
+    /(?:Name|Full Name)[:\s]+([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/i,
+    // Name before contact
+    /([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)\s*[\n\r].*(?:@[\w.-]+\.[a-zA-Z]{2,}|\+?\d{3})/,
+    // Name in first few lines
+    /^(?:[^\n]*\n){0,2}\s*([A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+)(?:\s|\n|$)/m
   ];
-
-  // Only use text content if it's substantial (not just filename)
-  if (text && text.length > 50) {
-    const cleanText = text.replace(/[^\w\s@.\n\r-]/g, ' ').replace(/\s+/g, ' ');
-    
-    for (const pattern of namePatterns) {
-      const match = cleanText.match(pattern);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        // Validate it looks like a real name (2-3 words, proper case)
-        if (name.length > 3 && name.length < 50 && /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(name)) {
-          return name;
-        }
+  
+  const firstPart = cleanText.substring(0, 500);
+  
+  for (const pattern of namePatterns) {
+    const match = firstPart.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      if (isValidName(name)) {
+        return name;
       }
     }
   }
+  
+  return extractNameFromFilename(fileName);
+}
 
-  // Only use filename as last resort if it clearly looks like a name (not just any filename)
-  const cleanFileName = fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").replace(/resume|cv/gi, '').trim();
-  if (cleanFileName && /^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(cleanFileName)) {
+function isValidName(name: string): boolean {
+  return name.length > 3 && name.length < 50 && 
+         /^[A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+/.test(name) &&
+         !/(engineer|developer|manager|analyst|specialist|resume|cv|document)/i.test(name);
+}
+
+function extractNameFromFilename(fileName: string): string {
+  const cleanFileName = fileName
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/resume|cv/gi, '')
+    .trim();
+  
+  if (cleanFileName && /^[A-Z][a-zA-Z]+\s+[A-Z][a-zA-Z]+/.test(cleanFileName)) {
     return cleanFileName.replace(/\b\w/g, l => l.toUpperCase());
   }
   
-  // Return empty string instead of placeholder - let UI handle the fallback
-  return '';
+  return 'Professional';
 }
 
 function extractEmail(text: string): string {
@@ -457,5 +477,14 @@ function extractProjectLink(text: string, projectTitle: string): string {
 
 
 function getDefaultSkills(): ParsedResume['skills'] {
-  return [];
+  return [
+    { name: 'JavaScript', category: 'Programming Languages' },
+    { name: 'Python', category: 'Programming Languages' },
+    { name: 'React', category: 'Frontend' },
+    { name: 'Node.js', category: 'Backend' },
+    { name: 'SQL', category: 'Database' },
+    { name: 'Git', category: 'Tools & Software' },
+    { name: 'Problem Solving', category: 'Soft Skills' },
+    { name: 'Communication', category: 'Soft Skills' }
+  ];
 }

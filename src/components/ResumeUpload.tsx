@@ -95,40 +95,56 @@ export default function ResumeUpload() {
         throw new Error('Resume parsing returned invalid data');
       }
       
-      // Normalize parsed data - ensure name comes from content only
-      const normalizedName = parsedResume.name || '';
+      // Normalize parsed data with proper fallbacks
+      const normalizedName = parsedResume.name || 'Professional';
       console.log('Normalized name from parser:', normalizedName);
       
       const parsedData = {
-        name: normalizedName, // Only use parsed name, never filename
-        title: parsedResume.title || 'Professional',
+        name: normalizedName,
+        title: parsedResume.title || 'Software Engineer',
         email: parsedResume.email || 'user@example.com',
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
         resumeUrl: "#",
-        about: parsedResume.summary || '',
+        about: parsedResume.summary || 'Passionate professional with expertise in modern technologies and a strong commitment to delivering high-quality solutions.',
         stats: {
-          yearsExperience: Math.max(1, parsedResume.experience.length),
-          projectsCompleted: Math.max(1, parsedResume.projects.length),
+          yearsExperience: Math.max(2, parsedResume.experience.length),
+          projectsCompleted: Math.max(2, parsedResume.projects.length),
           usersImpacted: "1K+"
         },
-        skills: parsedResume.skills.length > 0 ? parsedResume.skills : [{ name: 'Professional Skills', category: 'General' }],
+        skills: parsedResume.skills.length > 0 ? parsedResume.skills : [
+          { name: 'JavaScript', category: 'Programming Languages' },
+          { name: 'React', category: 'Frontend' },
+          { name: 'Node.js', category: 'Backend' },
+          { name: 'Problem Solving', category: 'Soft Skills' }
+        ],
         experience: parsedResume.experience.length > 0 ? parsedResume.experience : [{
-          title: parsedResume.title,
-          company: 'Previous Company',
-          duration: '2020 - Present',
-          location: 'Location',
-          description: `${parsedResume.title} with professional experience.`,
-          achievements: ['Professional accomplishments']
+          title: parsedResume.title || 'Software Engineer',
+          company: 'Technology Company',
+          duration: '2022 - Present',
+          location: 'Remote',
+          description: 'Developing modern web applications and software solutions using cutting-edge technologies.',
+          achievements: [
+            'Built responsive web applications using modern frameworks',
+            'Collaborated with cross-functional teams to deliver high-quality software'
+          ]
         }],
-        projects: parsedResume.projects.length > 0 ? parsedResume.projects : [{
-          title: 'Professional Project',
-          description: 'A project showcasing professional skills and expertise.',
-          technologies: ['Technology'],
-          link: 'https://github.com/username/project'
-        }],
+        projects: parsedResume.projects.length > 0 ? parsedResume.projects : [
+          {
+            title: 'Portfolio Website',
+            description: 'A responsive portfolio website showcasing professional skills and projects.',
+            technologies: ['React', 'TypeScript', 'Tailwind CSS'],
+            link: 'https://github.com/username/portfolio'
+          },
+          {
+            title: 'Web Application',
+            description: 'Full-stack web application with modern features and user-friendly interface.',
+            technologies: ['JavaScript', 'Node.js', 'MongoDB'],
+            link: 'https://github.com/username/webapp'
+          }
+        ],
         contact: {
-          email: parsedResume.email,
+          email: parsedResume.email || 'user@example.com',
           linkedin: "https://linkedin.com/in/yourusername",
           github: "https://github.com/yourusername",
           location: "Your City, State"
