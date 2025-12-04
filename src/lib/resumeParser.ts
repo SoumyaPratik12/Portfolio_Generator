@@ -196,30 +196,39 @@ function extractTitle(text: string): string {
 function extractSummary(text: string): string {
   if (!text || text.length < 50) return '';
   
-  // Enhanced summary extraction patterns
+  console.log('Extracting summary from text length:', text.length);
+  
+  // Enhanced summary extraction patterns for both SUMMARY and ABOUT sections
   const summaryPatterns = [
-    // SUMMARY section (most common)
-    /SUMMARY[\s\S]*?([•\s\S]*?)(?=\n\s*[A-Z]{2,}|\n\s*EXPERIENCE|\n\s*EDUCATION|\n\s*SKILLS|$)/i,
-    // Labeled sections
-    /(?:summary|objective|about|profile|overview)[:\s]+([\s\S]*?)(?:\n\s*(?:experience|education|skills|projects)|$)/i,
+    // SUMMARY or ABOUT section with bullet points
+    /(?:SUMMARY|ABOUT)[\s\n]+([•][\s\S]*?)(?=\n\s*[A-Z]{2,}[A-Z\s]*\n|\n\s*EXPERIENCE|\n\s*EDUCATION|\n\s*SKILLS|\n\s*PROJECTS|$)/i,
+    // SUMMARY or ABOUT section without bullet points
+    /(?:SUMMARY|ABOUT)[\s\n]+([^\n•][\s\S]*?)(?=\n\s*[A-Z]{2,}[A-Z\s]*\n|\n\s*EXPERIENCE|\n\s*EDUCATION|\n\s*SKILLS|\n\s*PROJECTS|$)/i,
+    // Labeled sections with colon
+    /(?:summary|objective|about|profile|overview)[:\s]+([\s\S]*?)(?=\n\s*(?:experience|education|skills|projects)|$)/i,
     // Professional summary
-    /(?:professional\s+summary|career\s+summary)[:\s]+([\s\S]*?)(?:\n\s*(?:experience|education|skills)|$)/i,
-    // Bullet points after summary header
-    /SUMMARY[\s\n]+([•][\s\S]*?)(?=\n\s*[A-Z]{2,}|$)/i
+    /(?:professional\s+summary|career\s+summary)[:\s]+([\s\S]*?)(?=\n\s*(?:experience|education|skills)|$)/i,
+    // Any section starting with bullet points after SUMMARY/ABOUT
+    /(?:SUMMARY|ABOUT)[\s]*[\n\r]+([\s\S]*?)(?=\n\s*[A-Z]{3,}|$)/i
   ];
   
   for (const pattern of summaryPatterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
       let summary = match[1].trim();
+      console.log('Found potential summary:', summary.substring(0, 100));
+      
       // Clean up bullet points and extra whitespace
-      summary = summary.replace(/^[•\s]+/gm, '• ').replace(/\s+/g, ' ');
-      if (summary.length > 50 && summary.length < 2000) {
+      summary = summary.replace(/^[•\s]+/gm, '•').replace(/\s+/g, ' ').trim();
+      
+      if (summary.length > 30 && summary.length < 2000) {
+        console.log('Extracted summary:', summary);
         return summary;
       }
     }
   }
   
+  console.log('No summary found');
   return '';
 }
 

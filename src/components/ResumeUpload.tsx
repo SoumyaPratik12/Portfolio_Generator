@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { parseResume } from "@/lib/resumeParser";
+import { parseResumeWithLovable } from "@/lib/lovableParser";
 import { PortfolioDeploymentService } from "@/lib/deploymentService";
 
 const ALLOWED_FILE_TYPES = [
@@ -85,7 +86,8 @@ export default function ResumeUpload() {
       toast.success("Parsing resume and generating live portfolio...");
       console.log('About to parse file:', selectedFile.name, 'Size:', selectedFile.size, 'Type:', selectedFile.type);
       
-      const parsedResume = await parseResume(selectedFile);
+      // Use Lovable enhanced parsing
+      const parsedResume = await parseResumeWithLovable(selectedFile);
       console.log('Received parsed resume:', parsedResume);
       
       // Ensure we have valid parsed data
@@ -94,14 +96,18 @@ export default function ResumeUpload() {
         throw new Error('Resume parsing returned invalid data');
       }
       
+      // Normalize parsed data - ensure name comes from content only
+      const normalizedName = parsedResume.name || parsedResume.full_name || '';
+      console.log('Normalized name from parser:', normalizedName);
+      
       const parsedData = {
-        name: parsedResume.name || '',
+        name: normalizedName, // Only use parsed name, never filename
         title: parsedResume.title || 'Professional',
         email: parsedResume.email || 'user@example.com',
         github: "https://github.com/yourusername",
         linkedin: "https://linkedin.com/in/yourusername",
         resumeUrl: "#",
-        about: parsedResume.summary,
+        about: parsedResume.summary || '',
         stats: {
           yearsExperience: Math.max(1, parsedResume.experience.length),
           projectsCompleted: Math.max(1, parsedResume.projects.length),
@@ -131,6 +137,7 @@ export default function ResumeUpload() {
       };
       
       console.log('Final portfolio data structure:', parsedData);
+      console.log('Parsed summary for About section:', parsedResume.summary);
 
       // File processed locally
       const filePath = `local/${selectedFile.name}`;
@@ -158,7 +165,8 @@ export default function ResumeUpload() {
         setUploadComplete(true);
         
         // Automatically deploy the portfolio
-        toast.success(`Portfolio generated for ${parsedData.name || 'User'}! Deploying live website...`);
+        const displayName = parsedData.name || 'Professional';
+        toast.success(`Portfolio generated for ${displayName}! Deploying live website...`);
         
         const deploymentResult = await PortfolioDeploymentService.deployPortfolio(portfolioData);
         

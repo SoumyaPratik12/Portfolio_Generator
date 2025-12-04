@@ -154,10 +154,15 @@ const Hero = ({
                 </div>
               )}
 
-              {name && (
+              {name ? (
                 <h1 className="text-6xl md:text-8xl font-bold mb-12">
                   {name}
                 </h1>
+              ) : (
+                <div className="text-center text-muted-foreground mb-12">
+                  <p className="text-lg">Name not detected from resume</p>
+                  <p className="text-sm">Click Edit to add your name manually</p>
+                </div>
               )}
 
               <div className="flex flex-wrap gap-4 justify-center mb-8">

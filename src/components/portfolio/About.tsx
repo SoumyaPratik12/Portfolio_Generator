@@ -20,6 +20,7 @@ const About = ({
   const [editAbout, setEditAbout] = useState<string>(about ?? "");
 
   useEffect(() => {
+    console.log('About component received about prop:', about);
     setEditAbout(about ?? "");
   }, [about]);
 
