@@ -32,6 +32,11 @@ const Skills = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
 
+  // Sync with props when skills change
+  useEffect(() => {
+    setEditData(skills);
+  }, [skills]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (scrollRef.current && !isEditing) {
@@ -90,38 +95,21 @@ const Skills = ({
     }
   };
 
-  const skillCategories = [
-    {
-      title: "Frontend",
-      languages: ["JavaScript", "TypeScript", "HTML", "CSS"],
-      frameworks: ["React", "Vue.js", "Angular", "Next.js"]
-    },
-    {
-      title: "Backend", 
-      languages: ["Python", "Java", "Node.js", "C#"],
-      frameworks: ["Django", "Spring", "Express", "FastAPI"]
-    },
-    {
-      title: "Database",
-      sql: ["PostgreSQL", "MySQL", "SQL Server"],
-      nosql: ["MongoDB", "Redis", "Cassandra"]
-    },
-    {
-      title: "Cloud & DevOps",
-      platforms: ["AWS", "Azure", "GCP"],
-      tools: ["Docker", "Kubernetes", "Jenkins", "Terraform"]
-    },
-    {
-      title: "Finance & Analytics",
-      tools: ["Excel", "Power BI", "Tableau", "R"],
-      skills: ["Financial Modeling", "Risk Analysis", "Data Visualization"]
-    },
-    {
-      title: "Engineering",
-      cad: ["AutoCAD", "SolidWorks", "MATLAB"],
-      automation: ["PLC", "SCADA", "LabVIEW"]
+  // Group skills by category from parsed resume data
+  const groupedSkills = editData.reduce((acc, skill) => {
+    if (!skill.name || !skill.category) return acc;
+    
+    if (!acc[skill.category]) {
+      acc[skill.category] = [];
     }
-  ];
+    acc[skill.category].push(skill.name);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  const skillCategories = Object.entries(groupedSkills).map(([category, skills]) => ({
+    title: category,
+    skills: skills
+  }));
 
   return (
     <section id="skills" className="py-24 bg-background">
@@ -185,30 +173,29 @@ const Skills = ({
             </div>
           ) : (
             <div className="w-full max-w-[1100px] mx-auto">
-              <div className="grid grid-cols-3 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-6 justify-items-center">
-                {skillCategories.map((category, index) => (
-                  <div key={index} className="w-full min-w-[260px] max-w-[360px] border-3 border-primary bg-background p-6 rounded-md shadow-sm flex flex-col text-left">
-                    <h3 className="text-xl font-bold mb-3">{category.title}</h3>
-                    <div className="space-y-4">
-                      {Object.entries(category).filter(([key]) => key !== 'title').map(([key, items]) => (
-                        <div key={key}>
-                          <div className="text-sm text-muted-foreground mb-2 capitalize">{key}:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {Array.isArray(items) ? items.map((item: string) => (
-                              <span
-                                key={item}
-                                className="inline-block px-3 py-1.5 text-sm border-2 border-primary rounded-full bg-transparent hover:bg-primary hover:text-primary-foreground transition-all whitespace-nowrap"
-                              >
-                                {item}
-                              </span>
-                            )) : null}
-                          </div>
-                        </div>
-                      ))}
+              {skillCategories.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+                  {skillCategories.map((category, index) => (
+                    <div key={index} className="w-full min-w-[260px] max-w-[360px] border-3 border-primary bg-background p-6 rounded-md shadow-sm flex flex-col text-left">
+                      <h3 className="text-xl font-bold mb-4">{category.title}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {category.skills.map((skill: string) => (
+                          <span
+                            key={skill}
+                            className="inline-block px-3 py-1.5 text-sm border-2 border-primary rounded-full bg-transparent hover:bg-primary hover:text-primary-foreground transition-all whitespace-nowrap"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No skills found. Upload a resume to display your skills.</p>
+                </div>
+              )}
             </div>
           )}
         </div>

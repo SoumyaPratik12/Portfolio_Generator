@@ -188,25 +188,46 @@ function extractSkillsSection(text: string): string | null {
 function parseSkillsFromSection(section: string): Array<{ name: string; category: string }> {
   const skills: Array<{ name: string; category: string }> = [];
   
-  // Split by common delimiters and clean up
-  const skillItems = section
-    .split(/[,;•\n]|\s{2,}/)
-    .map(item => item.trim())
-    .filter(item => item.length > 1 && item.length < 30)
-    .filter(item => !/^(and|or|with|using|including)$/i.test(item));
+  // Enhanced parsing for different formats
+  const lines = section.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   
-  for (const item of skillItems) {
-    // Clean up skill name
-    const cleanSkill = item
-      .replace(/^[•\-\*\s]+/, '')
-      .replace(/[\(\)\[\]]/g, '')
-      .trim();
-    
-    if (cleanSkill.length > 1 && isValidSkill(cleanSkill)) {
-      skills.push({
-        name: cleanSkill,
-        category: categorizeSkill(cleanSkill)
+  for (const line of lines) {
+    // Check if line contains category headers
+    const categoryMatch = line.match(/^([A-Za-z\s&]+):\s*(.+)$/);
+    if (categoryMatch) {
+      const category = categoryMatch[1].trim();
+      const skillsText = categoryMatch[2].trim();
+      
+      // Parse skills from this category
+      const categorySkills = skillsText
+        .split(/[,;|]|\s{2,}/)
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 1 && skill.length < 50)
+        .filter(skill => isValidSkill(skill));
+      
+      categorySkills.forEach(skill => {
+        skills.push({
+          name: cleanSkillName(skill),
+          category: category
+        });
       });
+    } else {
+      // Parse individual skills or comma-separated lists
+      const skillItems = line
+        .split(/[,;•\n]|\s{2,}/)
+        .map(item => item.trim())
+        .filter(item => item.length > 1 && item.length < 50)
+        .filter(item => !/^(and|or|with|using|including|skills|proficient|experience)$/i.test(item));
+      
+      for (const item of skillItems) {
+        const cleanSkill = cleanSkillName(item);
+        if (cleanSkill.length > 1 && isValidSkill(cleanSkill)) {
+          skills.push({
+            name: cleanSkill,
+            category: categorizeSkill(cleanSkill)
+          });
+        }
+      }
     }
   }
   
@@ -214,23 +235,55 @@ function parseSkillsFromSection(section: string): Array<{ name: string; category
   return skills.length > 0 ? skills : getDefaultSkills();
 }
 
+function cleanSkillName(skill: string): string {
+  return skill
+    .replace(/^[•\-\*\s]+/, '')
+    .replace(/[\(\)\[\]]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function scanForTechnicalSkills(text: string): Array<{ name: string; category: string }> {
-  const commonTechSkills = [
-    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Ruby',
-    'React', 'Angular', 'Vue', 'Node.js', 'Express', 'Django', 'Flask', 'Spring',
-    'HTML', 'CSS', 'SCSS', 'Sass', 'Tailwind', 'Bootstrap',
-    'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'SQLite',
-    'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Git', 'Jenkins'
+  const commonSkills = [
+    // Programming Languages
+    'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Ruby', 'Swift', 'Kotlin', 'Scala', 'R', 'MATLAB',
+    // Frontend
+    'React', 'Angular', 'Vue', 'HTML', 'CSS', 'SCSS', 'Sass', 'Tailwind', 'Bootstrap', 'jQuery',
+    // Backend
+    'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'Laravel', 'Rails', 'ASP.NET',
+    // Database
+    'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'SQLite', 'Oracle', 'SQL Server',
+    // Cloud & DevOps
+    'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Git', 'Jenkins', 'Terraform',
+    // Data & Analytics
+    'Pandas', 'NumPy', 'TensorFlow', 'PyTorch', 'Tableau', 'Power BI', 'Excel', 'SPSS',
+    // Finance
+    'Financial Modeling', 'Risk Analysis', 'Bloomberg', 'QuickBooks', 'SAP', 'CFA', 'FRM',
+    // Marketing
+    'Google Analytics', 'Facebook Ads', 'AdWords', 'HubSpot', 'Salesforce', 'SEO', 'SEM',
+    // Design
+    'Photoshop', 'Illustrator', 'Figma', 'Sketch', 'InDesign', 'After Effects', 'UI/UX',
+    // Engineering
+    'AutoCAD', 'SolidWorks', 'CATIA', 'ANSYS', 'PLC', 'SCADA', 'LabVIEW', 'Revit',
+    // Project Management
+    'Jira', 'Confluence', 'Trello', 'Asana', 'Agile', 'Scrum', 'Kanban', 'PMP',
+    // Languages
+    'English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese',
+    // Soft Skills
+    'Leadership', 'Management', 'Teamwork', 'Communication', 'Problem Solving'
   ];
   
-  const foundSkills = commonTechSkills
-    .filter(skill => new RegExp(`\\b${skill}(?:\.js)?\\b`, 'i').test(text))
+  const foundSkills = commonSkills
+    .filter(skill => {
+      const regex = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      return regex.test(text);
+    })
     .map(skill => ({
       name: skill,
       category: categorizeSkill(skill)
     }));
   
-  console.log('Scanned technical skills:', foundSkills);
+  console.log('Scanned skills from all sectors:', foundSkills);
   return foundSkills.length > 0 ? foundSkills : getDefaultSkills();
 }
 
@@ -257,42 +310,86 @@ function getDefaultSkills(): Array<{ name: string; category: string }> {
 function categorizeSkill(skill: string): string {
   const skillLower = skill.toLowerCase();
   
-  // Frontend technologies
-  if (/^(javascript|typescript|react|angular|vue|html|css|scss|sass|tailwind|bootstrap|jquery|webpack|vite)$/i.test(skill)) {
+  // Programming Languages
+  if (/^(javascript|typescript|python|java|c\+\+|c#|go|rust|php|ruby|swift|kotlin|scala|r|matlab)$/i.test(skill)) {
+    return 'Programming Languages';
+  }
+  
+  // Frontend Technologies
+  if (/^(react|angular|vue|html|css|scss|sass|tailwind|bootstrap|jquery|webpack|vite|next\.?js)$/i.test(skill)) {
     return 'Frontend';
   }
   
-  // Backend technologies
-  if (/^(node\.?js|python|java|c\+\+|c#|go|rust|php|ruby|django|flask|express|spring|laravel)$/i.test(skill)) {
+  // Backend Technologies
+  if (/^(node\.?js|django|flask|express|spring|laravel|rails|asp\.?net)$/i.test(skill)) {
     return 'Backend';
   }
   
-  // Database technologies
-  if (/^(mysql|postgresql|mongodb|redis|sqlite|oracle|sql\s?server|dynamodb|cassandra)$/i.test(skill)) {
+  // Database Technologies
+  if (/^(mysql|postgresql|mongodb|redis|sqlite|oracle|sql\s?server|dynamodb|cassandra|elasticsearch)$/i.test(skill)) {
     return 'Database';
   }
   
   // Cloud & DevOps
-  if (/^(aws|azure|gcp|google\s?cloud|docker|kubernetes|jenkins|gitlab|github\s?actions|terraform|ansible)$/i.test(skill)) {
+  if (/^(aws|azure|gcp|google\s?cloud|docker|kubernetes|jenkins|gitlab|github\s?actions|terraform|ansible|ci\/cd)$/i.test(skill)) {
     return 'Cloud & DevOps';
   }
   
-  // Mobile development
-  if (/^(react\s?native|flutter|swift|kotlin|ios|android|xamarin)$/i.test(skill)) {
+  // Mobile Development
+  if (/^(react\s?native|flutter|ios|android|xamarin|ionic|cordova)$/i.test(skill)) {
     return 'Mobile';
   }
   
-  // Tools & Others
-  if (/^(git|linux|windows|macos|figma|photoshop|jira|confluence|slack)$/i.test(skill)) {
-    return 'Tools';
+  // Data Science & Analytics
+  if (/^(pandas|numpy|scikit.learn|tensorflow|pytorch|tableau|power\s?bi|excel|spss|sas|looker)$/i.test(skill)) {
+    return 'Data & Analytics';
   }
   
-  // Default category based on common patterns
+  // Finance & Accounting
+  if (/^(financial\s?modeling|risk\s?analysis|bloomberg|quickbooks|sap|oracle\s?financials|ifrs|gaap|cfa|frm)$/i.test(skill)) {
+    return 'Finance & Accounting';
+  }
+  
+  // Marketing & Sales
+  if (/^(google\s?analytics|facebook\s?ads|adwords|hubspot|salesforce|mailchimp|hootsuite|seo|sem|crm)$/i.test(skill)) {
+    return 'Marketing & Sales';
+  }
+  
+  // Design & Creative
+  if (/^(photoshop|illustrator|figma|sketch|indesign|after\s?effects|premiere|canva|ui\/ux|graphic\s?design)$/i.test(skill)) {
+    return 'Design & Creative';
+  }
+  
+  // Engineering & CAD
+  if (/^(autocad|solidworks|catia|ansys|matlab|simulink|plc|scada|labview|revit|inventor)$/i.test(skill)) {
+    return 'Engineering & CAD';
+  }
+  
+  // Project Management
+  if (/^(jira|confluence|trello|asana|monday|ms\s?project|agile|scrum|kanban|pmp|prince2)$/i.test(skill)) {
+    return 'Project Management';
+  }
+  
+  // Communication & Languages
+  if (/^(english|spanish|french|german|chinese|japanese|korean|arabic|communication|presentation|negotiation)$/i.test(skill)) {
+    return 'Communication & Languages';
+  }
+  
+  // Tools & Software
+  if (/^(git|linux|windows|macos|slack|zoom|teams|office|google\s?workspace|notion)$/i.test(skill)) {
+    return 'Tools & Software';
+  }
+  
+  // Default categorization based on patterns
   if (/\.(js|ts|py|java|cpp|cs|go|rs|php|rb)$/i.test(skill)) {
-    return 'Programming';
+    return 'Programming Languages';
   }
   
-  return 'Technical';
+  if (/^(leadership|management|teamwork|problem\s?solving|critical\s?thinking|creativity)$/i.test(skill)) {
+    return 'Soft Skills';
+  }
+  
+  return 'Professional Skills';
 }
 
 function extractExperienceEnhanced(text: string): Array<any> {

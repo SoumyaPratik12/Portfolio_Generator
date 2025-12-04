@@ -97,7 +97,7 @@ export default function ResumeUpload() {
       }
       
       // Normalize parsed data - ensure name comes from content only
-      const normalizedName = parsedResume.name || parsedResume.full_name || '';
+      const normalizedName = parsedResume.name || '';
       console.log('Normalized name from parser:', normalizedName);
       
       const parsedData = {
