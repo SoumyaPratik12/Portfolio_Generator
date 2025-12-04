@@ -135,22 +135,50 @@ function extractEmailEnhanced(text: string): string {
 }
 
 function extractSummaryEnhanced(text: string): string {
+  console.log('Extracting summary from text, length:', text.length);
+  
+  // Clean the text first - remove XML/HTML tags and normalize whitespace
+  let cleanText = text
+    .replace(/<[^>]*>/g, ' ')  // Remove XML/HTML tags
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')  // Remove HTML entities
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')  // Remove control characters
+    .replace(/\s+/g, ' ')  // Normalize whitespace
+    .trim();
+  
+  console.log('Cleaned text for summary extraction, length:', cleanText.length);
+  
   const summaryPatterns = [
-    /(?:SUMMARY|ABOUT)[\s\n]+([\s\S]*?)(?=\n\s*[A-Z]{3,}|\n\s*EXPERIENCE|\n\s*EDUCATION|\n\s*SKILLS|$)/i,
-    /(?:summary|objective|about|profile)[:]\s*([^]*?)(?=\n\s*(?:experience|education|skills)|$)/i
+    /(?:SUMMARY|ABOUT|PROFILE|OBJECTIVE)[\s\n:]+([\s\S]*?)(?=\n\s*[A-Z]{3,}|\n\s*EXPERIENCE|\n\s*EDUCATION|\n\s*SKILLS|\n\s*PROJECTS|$)/i,
+    /(?:summary|objective|about|profile)[:\s]+([^]*?)(?=\n\s*(?:experience|education|skills|projects)|$)/i,
+    // Look for paragraph-like content at the beginning after name/contact
+    /(?:^|\n)([A-Z][^\n]{50,200}[.!?])(?=\n|$)/m
   ];
   
   for (const pattern of summaryPatterns) {
-    const match = text.match(pattern);
+    const match = cleanText.match(pattern);
     if (match && match[1]) {
       let summary = match[1].trim();
-      summary = summary.replace(/^[•\s]+/gm, '• ').replace(/\s+/g, ' ');
-      if (summary.length > 30) {
+      
+      // Further clean the summary
+      summary = summary
+        .replace(/^[•\-\*\s]+/gm, '')  // Remove bullet points
+        .replace(/\s+/g, ' ')  // Normalize spaces
+        .replace(/[\r\n]+/g, ' ')  // Replace line breaks with spaces
+        .trim();
+      
+      // Validate summary quality
+      if (summary.length > 30 && summary.length < 1000 && 
+          !summary.includes('blank') && 
+          !summary.includes('endobj') &&
+          !summary.includes('xmp') &&
+          !/^[\d\s<>\[\]{}().,;:]+$/.test(summary)) {
+        console.log('Extracted clean summary:', summary.substring(0, 100));
         return summary;
       }
     }
   }
   
+  console.log('No valid summary found');
   return '';
 }
 

@@ -198,6 +198,14 @@ function extractSummary(text: string): string {
   
   console.log('Extracting summary from text length:', text.length);
   
+  // Clean the text first - remove XML/HTML tags and normalize whitespace
+  let cleanText = text
+    .replace(/<[^>]*>/g, ' ')  // Remove XML/HTML tags
+    .replace(/&[a-zA-Z0-9#]+;/g, ' ')  // Remove HTML entities
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')  // Remove control characters
+    .replace(/\s+/g, ' ')  // Normalize whitespace
+    .trim();
+  
   // Enhanced summary extraction patterns for both SUMMARY and ABOUT sections
   const summaryPatterns = [
     // SUMMARY or ABOUT section with bullet points
@@ -213,15 +221,24 @@ function extractSummary(text: string): string {
   ];
   
   for (const pattern of summaryPatterns) {
-    const match = text.match(pattern);
+    const match = cleanText.match(pattern);
     if (match && match[1]) {
       let summary = match[1].trim();
       console.log('Found potential summary:', summary.substring(0, 100));
       
       // Clean up bullet points and extra whitespace
-      summary = summary.replace(/^[•\s]+/gm, '•').replace(/\s+/g, ' ').trim();
+      summary = summary
+        .replace(/^[•\-\*\s]+/gm, '')  // Remove bullet points
+        .replace(/\s+/g, ' ')  // Normalize spaces
+        .replace(/[\r\n]+/g, ' ')  // Replace line breaks with spaces
+        .trim();
       
-      if (summary.length > 30 && summary.length < 2000) {
+      // Validate summary quality - reject XML/HTML artifacts
+      if (summary.length > 30 && summary.length < 2000 && 
+          !summary.includes('blank') && 
+          !summary.includes('endobj') &&
+          !summary.includes('xmp') &&
+          !/^[\d\s<>\[\]{}().,;:]+$/.test(summary)) {
         console.log('Extracted summary:', summary);
         return summary;
       }

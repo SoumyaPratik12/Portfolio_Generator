@@ -9,7 +9,6 @@ import { Upload, FileText, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { parseResume } from "@/lib/resumeParser";
 import { parseResumeWithLovable } from "@/lib/lovableParser";
-import { PortfolioDeploymentService } from "@/lib/deploymentService";
 
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -154,39 +153,24 @@ export default function ResumeUpload() {
         updated_at: new Date().toISOString()
       };
       
-      toast.success("Resume parsed successfully! Deploying live website...");
+      toast.success("Resume parsed successfully!");
 
-      // Store and automatically deploy portfolio
+      // Store portfolio data locally (no auto-deployment)
       try {
-        console.log('Saving and deploying portfolio data:', portfolioData);
+        console.log('Saving portfolio data:', portfolioData);
         localStorage.setItem('current_portfolio', JSON.stringify(portfolioData));
         
         setPortfolioData(portfolioData);
         setUploadComplete(true);
         
-        // Automatically deploy the portfolio
         const displayName = parsedData.name || 'Professional';
-        toast.success(`Portfolio generated for ${displayName}! Deploying live website...`);
-        
-        const deploymentResult = await PortfolioDeploymentService.deployPortfolio(portfolioData);
-        
-        if (deploymentResult.success) {
-          toast.success(`🚀 Portfolio deployed successfully! Live at: ${deploymentResult.url}`);
-          
-          // Open deployed portfolio in new tab
-          setTimeout(() => {
-            window.open(deploymentResult.url, '_blank');
-          }, 1000);
-        } else {
-          toast.error(`Deployment failed: ${deploymentResult.error}`);
-          toast.success(`Portfolio saved locally. You can deploy it manually from the preview page.`);
-        }
+        toast.success(`Portfolio generated for ${displayName}! Ready for preview and manual deployment.`);
         
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('portfolioUpdated', { detail: portfolioData }));
         
       } catch (error) {
-        console.error('Failed to save/deploy portfolio:', error);
+        console.error('Failed to save portfolio:', error);
         toast.error('Failed to process portfolio. Please try again.');
       }
 
@@ -279,8 +263,13 @@ export default function ResumeUpload() {
           <div className="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-md">
             <h3 className="text-lg font-semibold text-green-800 mb-3">✅ Resume Parsed Successfully!</h3>
             <p className="text-sm text-green-700 mb-4">
-              Your portfolio has been generated from your resume. You can now preview it or make edits.
+              Your portfolio has been generated from your resume. Preview it, make edits, and deploy manually when ready.
             </p>
+            <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-xs text-blue-700">
+                💡 <strong>Manual Deployment:</strong> Use the "Deploy Live" button in the preview page to publish your portfolio when you're satisfied with it.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Button 
                 onClick={() => {
@@ -290,7 +279,7 @@ export default function ResumeUpload() {
                 }} 
                 className="flex items-center justify-center gap-2"
               >
-                👁️ PREVIEW
+                👁️ PREVIEW & DEPLOY
               </Button>
               <Button 
                 onClick={() => {

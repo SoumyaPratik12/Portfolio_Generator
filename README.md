@@ -12,7 +12,7 @@ Visit: [https://portfoliogenerator.com](https://portfoliogenerator.com)
 - **Live Preview**: Real-time portfolio preview with editing capabilities
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 - **Custom Domains**: Get personalized subdomains (e.g., yourname.portfoliogenerator.com)
-- **One-Click Deployment**: Deploy your portfolio live with a single click
+- **Manual Deployment**: Deploy your portfolio live when you're ready with manual control
 - **Modern UI**: Clean, professional design with smooth animations
 
 ## 🛠️ Tech Stack
