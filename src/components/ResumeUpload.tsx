@@ -95,8 +95,8 @@ export default function ResumeUpload() {
         throw new Error('Resume parsing returned invalid data');
       }
       
-      // Normalize parsed data with proper fallbacks
-      const normalizedName = parsedResume.name || 'Professional';
+      // Normalize parsed data - only use name from resume content
+      const normalizedName = parsedResume.name || '';
       console.log('Normalized name from parser:', normalizedName);
       
       const parsedData = {

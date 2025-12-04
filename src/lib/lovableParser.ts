@@ -66,7 +66,7 @@ function extractNameEnhanced(text: string, fileName: string): string {
   
   if (!text || text.length < 20) {
     console.log('Insufficient text content for name extraction');
-    return extractNameFromFilename(fileName);
+    return '';
   }
   
   // Clean text first
@@ -104,8 +104,8 @@ function extractNameEnhanced(text: string, fileName: string): string {
     }
   }
   
-  console.log('No valid name found in resume content, trying filename');
-  return extractNameFromFilename(fileName);
+  console.log('No valid name found in resume content');
+  return '';
 }
 
 function isValidName(name: string): boolean {
@@ -678,10 +678,8 @@ function extractSection(text: string, sectionNames: string[]): string | null {
 async function fallbackParsing(file: File): Promise<LovableParseResult> {
   console.log('Using fallback parsing');
   
-  const nameFromFile = extractNameFromFilename(file.name);
-  
   return {
-    name: nameFromFile,
+    name: '',
     title: 'Software Engineer',
     email: 'user@example.com',
     summary: 'Passionate software engineer with expertise in modern web technologies and a strong commitment to delivering high-quality solutions.',

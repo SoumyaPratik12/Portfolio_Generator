@@ -201,7 +201,7 @@ const Dashboard = () => {
                   <div>
                     <h3 className="font-semibold mb-2">Portfolio Details</h3>
                     <p className="text-sm text-muted-foreground mb-1">
-                      <strong>Name:</strong> {portfolio?.portfolio_data?.name || 'Not set'}
+                      <strong>Name:</strong> {portfolio?.portfolio_data?.name || 'Not found in resume'}
                     </p>
                     <p className="text-sm text-muted-foreground mb-1">
                       <strong>Title:</strong> {portfolio?.portfolio_data?.title || 'Not set'}

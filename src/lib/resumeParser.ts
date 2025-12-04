@@ -95,7 +95,7 @@ async function tryReadFileAsText(file: File): Promise<string> {
 
 function extractName(text: string, fileName: string): string {
   if (!text || text.length < 20) {
-    return extractNameFromFilename(fileName);
+    return '';
   }
   
   // Clean text first
@@ -131,7 +131,7 @@ function extractName(text: string, fileName: string): string {
     }
   }
   
-  return extractNameFromFilename(fileName);
+  return '';
 }
 
 function isValidName(name: string): boolean {
